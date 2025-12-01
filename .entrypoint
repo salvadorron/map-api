@@ -1,0 +1,57 @@
+#!/bin/bash
+
+# --- CONFIGURACIÓN ---
+
+ENV_FILE="./.env"
+
+load_env() {
+    if [ -f "$ENV_FILE" ]; then
+        echo "Cargando variables desde $ENV_FILE..."
+        export $(grep -v '^#' "$ENV_FILE" | xargs -d '\n')
+    else
+        echo "Error: Archivo $ENV_FILE no encontrado."
+        exit 1
+    fi
+}
+load_env
+
+export PGHOST="$DB_HOST"
+export PGPORT="$DB_PORT"
+export PGUSER="$DB_USER"
+export PGPASSWORD="$DB_PASSWORD"
+
+# 2. VERIFICAR Y CREAR LA BASE DE DATOS
+echo "Verificando la existencia de la base de datos '$DB_NAME'..."
+# psql leerá la contraseña desde PGPASSWORD
+psql -d $DB_NAME -c '\q' 2> /dev/null
+
+if [ $? -ne 0 ]; then
+    echo "Creando la base de datos '$DB_NAME'..."
+    # createdb leerá la contraseña desde PGPASSWORD
+    createdb -E UTF8 "$DB_NAME"
+    
+    if [ $? -ne 0 ]; then
+        echo "ERROR: No se pudo crear la base de datos. Verifique permisos o credenciales."
+        # Antes de salir, se recomienda limpiar la variable de entorno
+        unset PGPASSWORD 
+        exit 1
+    fi
+    echo "Base de datos '$DB_NAME' creada exitosamente."
+else
+    echo "La base de datos '$DB_NAME' ya existe."
+fi
+
+# 3. APLICAR EL ESQUEMA SQL
+echo "Aplicando esquema desde $SCHEMA_FILE..."
+# psql leerá la contraseña desde PGPASSWORD
+psql -d "$DB_NAME" -f "$SCHEMA_FILE"
+
+if [ $? -ne 0 ]; then
+    echo "ERROR: Fallo al aplicar el esquema SQL. La aplicación no iniciará."
+    exit 1
+fi
+
+echo "Esquema aplicado con éxito."
+
+echo "--- Inicializando NestJS ---"
+npm run start:dev
