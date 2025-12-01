@@ -3,7 +3,7 @@ import { FormService } from './form.service';
 import { CreateFormDto } from './dto/create-form.dto';
 import { UpdateFormDto } from './dto/update-form.dto';
 
-@Controller('form')
+@Controller('forms')
 export class FormController {
   constructor(private readonly formService: FormService) {}
 
@@ -19,16 +19,16 @@ export class FormController {
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.formService.findOne(+id);
+    return this.formService.findOne(id);
   }
 
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateFormDto: UpdateFormDto) {
-    return this.formService.update(+id, updateFormDto);
+    return this.formService.update(id, updateFormDto);
   }
 
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.formService.remove(+id);
+    return this.formService.remove(id);
   }
 }

@@ -3,7 +3,7 @@ import { ShapeService } from './shape.service';
 import { CreateShapeDto } from './dto/create-shape.dto';
 import { UpdateShapeDto } from './dto/update-shape.dto';
 
-@Controller('shape')
+@Controller('shapes')
 export class ShapeController {
   constructor(private readonly shapeService: ShapeService) {}
 

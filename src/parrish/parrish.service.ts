@@ -1,26 +1,26 @@
-import { Injectable } from '@nestjs/common';
-import { CreateParrishDto } from './dto/create-parrish.dto';
-import { UpdateParrishDto } from './dto/update-parrish.dto';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { PgService } from 'src/database/pg-config.service';
+import { UUID } from 'src/helpers/uuid';
+import { Parrish } from './entities/parrish.entity';
 
 @Injectable()
 export class ParrishService {
-  create(createParrishDto: CreateParrishDto) {
-    return 'This action adds a new parrish';
+  constructor(private readonly db: PgService) {}
+
+  async findAll() {
+    return this.db.runInTransaction(async (client) => {
+      const result = await client.query<Parrish>('SELECT * FROM public.parrishes');
+      return result.rows;
+    })
   }
 
-  findAll() {
-    return `This action returns all parrish`;
-  }
-
-  findOne(id: number) {
-    return `This action returns a #${id} parrish`;
-  }
-
-  update(id: number, updateParrishDto: UpdateParrishDto) {
-    return `This action updates a #${id} parrish`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} parrish`;
+  async findOne(id: string) {
+    const parrishId = UUID.fromString(id);
+    const parrish = await this.db.runInTransaction(async (client) => {
+      const result = await client.query<Parrish>('SELECT * FROM public.parrishes WHERE id = $1', [parrishId.getValue()]);
+      if(result.rowCount === 0) throw new NotFoundException(`Parrish with ID ${id} not found.`)
+      return result.rows[0];
+    })
+    return parrish;
   }
 }

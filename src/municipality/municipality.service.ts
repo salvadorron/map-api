@@ -1,26 +1,29 @@
-import { Injectable } from '@nestjs/common';
-import { CreateMunicipalityDto } from './dto/create-municipality.dto';
-import { UpdateMunicipalityDto } from './dto/update-municipality.dto';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { PgService } from 'src/database/pg-config.service';
+import { Municipality } from './entities/municipality.entity';
+import { UUID } from 'src/helpers/uuid';
 
 @Injectable()
 export class MunicipalityService {
-  create(createMunicipalityDto: CreateMunicipalityDto) {
-    return 'This action adds a new municipality';
-  }
+
+  constructor(private readonly db: PgService) {}
 
   findAll() {
-    return `This action returns all municipality`;
+    return this.db.runInTransaction(async (client) => {
+      const result = await client.query<Municipality>('SELECT * FROM public.municipalities');
+      return result.rows;
+    })
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} municipality`;
+  async findOne(id: string) {
+    const municipalityId = UUID.fromString(id);
+    const municipality = await this.db.runInTransaction(async (client) => {
+      const result = await client.query<Municipality>('SELECT * FROM public.municipalities WHERE id = $1', [municipalityId.getValue()]);
+      if(result.rowCount === 0) throw new NotFoundException(`Municipality with ID ${id} not found.`)
+      return result.rows[0];
+    })
+
+    return municipality;
   }
 
-  update(id: number, updateMunicipalityDto: UpdateMunicipalityDto) {
-    return `This action updates a #${id} municipality`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} municipality`;
-  }
 }

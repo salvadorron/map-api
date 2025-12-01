@@ -2,7 +2,7 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { CreateShapeDto } from './dto/create-shape.dto';
 import { UpdateShapeDto } from './dto/update-shape.dto';
 import { PgService } from 'src/database/pg-config.service';
-import { DeletedShape, Shape } from './entities/shape.entity';
+import { Shape } from './entities/shape.entity';
 import { UUID } from 'src/helpers/uuid';
 
 @Injectable()
@@ -14,7 +14,7 @@ export class ShapeService {
     const { properties = {}, geom } = createShapeDto;
     const shapeId = UUID.create()
     const shape = await this.db.runInTransaction(async (client) => {
-      const result = await client.query<Shape>('INSERT INTO shapes (id, properties, geom) VALUES ($1, $2, ST_GeomFromGeoJSON($3), $4, $5) RETURNING *', [shapeId.getValue(), properties, geom, new Date(), new Date()])
+      const result = await client.query<Shape>('INSERT INTO shapes (id, properties, geom, created_at, updated_at) VALUES ($1, $2, ST_GeomFromGeoJSON($3), $4, $5) RETURNING *', [shapeId.getValue(), properties, geom, new Date(), new Date()])
       return result.rows[0];
     })
     return shape;
@@ -56,8 +56,8 @@ export class ShapeService {
     const shape = await this.db.runInTransaction(async (client) => {
       const query = `
         UPDATE shapes
-        SET ${setString}, updated_at = $${values.length}
-        WHERE "id" = $${values.length + 1}
+        SET ${setString}, updated_at = $${values.length - 1}
+        WHERE "id" = $${values.length}
         RETURNING *
       `;
       const result = await client.query<Shape>(query, values);
@@ -71,7 +71,7 @@ export class ShapeService {
   async remove(id: string) {
     const shapeId = UUID.fromString(id);
     const deletedShape = await this.db.runInTransaction(async (client) => {
-      const result = await client.query<DeletedShape>('DELETE FROM shapes WHERE id = $1 RETURNING id', [shapeId.getValue()]);
+      const result = await client.query<Pick<Shape, 'id'>>('DELETE FROM shapes WHERE id = $1 RETURNING id', [shapeId.getValue()]);
       return result.rows[0];
     })
 

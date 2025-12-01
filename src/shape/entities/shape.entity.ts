@@ -7,7 +7,3 @@ export class Shape {
     created_at: string
     updated_at: string
 }
-
-export class DeletedShape {
-    id: string
-}
