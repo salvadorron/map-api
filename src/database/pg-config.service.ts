@@ -1,5 +1,5 @@
-import { BadRequestException, Injectable, InternalServerErrorException, OnModuleDestroy, OnModuleInit } from "@nestjs/common";
-import { Pool, QueryResult, PoolClient, Result } from 'pg';
+import { Injectable, OnModuleDestroy, OnModuleInit } from "@nestjs/common";
+import { Pool, QueryResult, PoolClient } from 'pg';
 
 @Injectable()
 export class PgService implements OnModuleInit, OnModuleDestroy {
@@ -10,6 +10,7 @@ export class PgService implements OnModuleInit, OnModuleDestroy {
         const database = process.env.DB_NAME;
         const password = process.env.DB_PASSWORD;
         const port = parseInt(process.env.DB_PORT ?? '5432', 10);
+
 
         this.pool = new Pool({
             user,
