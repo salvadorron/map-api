@@ -1,16 +1,17 @@
 import { Type } from "class-transformer"
-import { IsNotEmpty, IsObject, IsOptional, IsUUID, ValidateNested } from "class-validator"
+import { ArrayNotEmpty, IsArray, IsNotEmpty, IsObject, IsOptional, IsUUID, ValidateNested } from "class-validator"
 import { type GeoJsonProperties, type Geometry } from "geojson"
 import { GeometryDto } from "./geometry.dto"
 export class CreateShapeDto {
-    @IsUUID()
-    @IsNotEmpty()
-    category_id: string
+    @IsArray({ message: 'category_ids must be array' })
+    @ArrayNotEmpty()
+    @IsUUID('4', { each: true })
+    category_ids: string[]
 
     @IsOptional()
     @IsObject()
     properties: GeoJsonProperties
-    
+
     @IsNotEmpty()
     @Type(() => GeometryDto)
     @ValidateNested()

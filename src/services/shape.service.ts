@@ -11,11 +11,15 @@ export class ShapeService {
 
   constructor(private readonly db: PgService) { }
 
-  async create({ geom, properties = {}, category_id }: CreateShapeDto) {
+  async create({ geom, properties = {}, category_ids }: CreateShapeDto) {
     const shapeId = UUID.create()
     const shape = await this.db.runInTransaction(async (client) => {
       await client.query<Shape>('INSERT INTO shapes (id, properties, geom, created_at, updated_at) VALUES ($1, $2, ST_GeomFromGeoJSON($3), $4, $5) RETURNING created_at, updated_at', [shapeId.getValue(), properties, geom, new Date(), new Date()])
-      await client.query<Category>('INSERT INTO shapes_categories (shape_id, category_id) VALUES($1,$2)', [shapeId.getValue(), category_id]);
+
+      for await (const categoryId of category_ids) {
+        await client.query<Category>('INSERT INTO shapes_categories (shape_id, category_id) VALUES($1,$2)', [shapeId.getValue(), categoryId]);
+      }
+
       const result = await client.query<Pick<Category, 'name' | 'color' | 'icon' | 'parent_id' | 'element_type'> & Pick<Shape, 'created_at' | 'updated_at'>>(`
         SELECT 
         c.name, 
@@ -38,7 +42,7 @@ export class ShapeService {
         properties: {
           ...properties,
           id: shapeId.getValue(),
-          category_id,
+          category_ids,
           category_name: name,
           color,
           icon,
@@ -55,8 +59,40 @@ export class ShapeService {
 
   async findAll() {
     const shapes = await this.db.runInTransaction(async (client) => {
-      const result = await client.query<Shape>('SELECT id, properties, ST_AsGeoJSON(geom)::json as geom, created_at, updated_at FROM shapes');
-      return result.rows;
+      const result = await client.query<Pick<Category, 'color' | 'icon' | 'parent_id' | 'element_type'> & { category_name: string, category_id: string } & Pick<Shape, 'id' | 'properties' | 'geom' | 'created_at' | 'updated_at'>>(`
+        SELECT
+        c.id as category_id, 
+        c.name as category_name, 
+        c.color, 
+        c.icon, 
+        c.parent_id, 
+        c.element_type, 
+        s.id, 
+        s.properties, 
+        ST_AsGeoJSON(s.geom)::json as geom, 
+        s.created_at, 
+        s.updated_at FROM shapes as s
+        JOIN public.shapes_categories as sc on sc.shape_id = s.id 
+        JOIN public.categories as c on sc.category_id = c.id`
+      );
+      return result.rows.map(({ id, geom, properties, created_at, updated_at, category_name, category_id, color, element_type, icon, parent_id }) => {
+        return {
+          type: 'Feature',
+          geometry: geom,
+          properties: {
+            ...properties,
+            category_name,
+            category_id,
+            color,
+            element_type,
+            icon,
+            parent_id,
+            id,
+            created_at,
+            updated_at
+          }
+        }
+      });
     })
     return shapes
   }
