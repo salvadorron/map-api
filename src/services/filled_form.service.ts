@@ -1,13 +1,14 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PgService } from 'src/database/pg-config.service';
 import { CreateFilledFormDto } from 'src/dto/create-filled_form.dto';
+import { FilledFormFilters } from 'src/dto/filters.dto';
 import { UpdateFilledFormDto } from 'src/dto/update-filled_form.dto';
 import { FilledForm } from 'src/entities/filled_form.entity';
 import { UUID } from 'src/helpers/uuid';
 
 @Injectable()
 export class FilledFormService {
-  constructor(private readonly db: PgService) {}
+  constructor(private readonly db: PgService) { }
   async create(createFilledFormDto: CreateFilledFormDto) {
     const { form_id, shape_id, records, title } = createFilledFormDto;
     const recordsObject = Object.fromEntries(records.entries());
@@ -19,9 +20,10 @@ export class FilledFormService {
     return filledForm;
   }
 
-  findAll() {
+  findAll(filters: FilledFormFilters = {}) {
+    const { query, values } = this.buildQuery(filters);
     return this.db.runInTransaction(async (client) => {
-      const result = await client.query<FilledForm[]>('SELECT * FROM public.filled_forms');
+      const result = await client.query<FilledForm[]>(query, values);
       return result.rows;
     })
   }
@@ -30,7 +32,7 @@ export class FilledFormService {
     const filledFormId = UUID.fromString(id);
     return this.db.runInTransaction(async (client) => {
       const result = await client.query<FilledForm>('SELECT * FROM public.filled_forms WHERE id = $1', [filledFormId.getValue()]);
-      if(result.rowCount === 0) throw new NotFoundException(`Filled form with ID ${id} not found.`)
+      if (result.rowCount === 0) throw new NotFoundException(`Filled form with ID ${id} not found.`)
       return result.rows[0];
     })
   }
@@ -41,9 +43,9 @@ export class FilledFormService {
 
     const keys = Object.keys(updateFilledFormDto);
     const values = Object.values(updateFilledFormDto)
-    .map((value) => value instanceof Map ? Object.fromEntries(value.entries()) : value);
+      .map((value) => value instanceof Map ? Object.fromEntries(value.entries()) : value);
 
-    if(keys.length === 0 || values.length === 0) throw new BadRequestException('Must be at least one property to patch')
+    if (keys.length === 0 || values.length === 0) throw new BadRequestException('Must be at least one property to patch')
 
     const setString = keys.map((key, index) => {
       return `"${key}" = $${index + 1}`;
@@ -60,7 +62,7 @@ export class FilledFormService {
         RETURNING *
       `;
       const result = await client.query<FilledForm>(query, values);
-      if(result.rowCount === 0) throw new NotFoundException(`Filled form with ID ${id} not found.`)
+      if (result.rowCount === 0) throw new NotFoundException(`Filled form with ID ${id} not found.`)
       return result.rows[0];
     })
     return filledForm;
@@ -70,9 +72,18 @@ export class FilledFormService {
     const filledFormId = UUID.fromString(id);
     const filledForm = await this.db.runInTransaction(async (client) => {
       const result = await client.query<Pick<FilledForm, 'id'>>('DELETE FROM public.filled_forms WHERE id = $1 RETURNING id', [filledFormId.getValue()]);
-      if(result.rowCount === 0) throw new NotFoundException(`Filled form with ID ${id} not found.`)
+      if (result.rowCount === 0) throw new NotFoundException(`Filled form with ID ${id} not found.`)
       return result.rows[0];
     })
     return { message: `Filled form with ID: (${filledForm.id}) has deleted successfully!` };
+  }
+
+
+
+  private buildQuery(filters: FilledFormFilters = {}) {
+    if(filters.shape_id) {
+      return { query: 'SELECT * FROM public.filled_forms WHERE shape_id = $1', values: [filters.shape_id] }
+    }
+    return { query: 'SELECT * FROM public.filled_forms', values: undefined }
   }
 }

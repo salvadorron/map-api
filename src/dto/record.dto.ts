@@ -1,4 +1,4 @@
-import { IsIn, IsNotEmpty, IsString, registerDecorator, ValidatorConstraintInterface, ValidationArguments, ValidatorConstraint, ValidationOptions } from "class-validator";
+import { IsIn, IsNotEmpty, IsString, registerDecorator, ValidatorConstraintInterface, ValidationArguments, ValidatorConstraint, ValidationOptions, IsOptional } from "class-validator";
 
 @ValidatorConstraint({ async: false })
 export class IsMapNotEmptyConstraint implements ValidatorConstraintInterface {
@@ -37,6 +37,7 @@ export class RecordDto {
     label: string;
 
     @IsString({ message: 'type must be a string.' })
+    @IsOptional()
     @IsIn(['textarea', 'date', 'text', 'number'], { message: 'type must be one of the following: textarea, date, text, number.' })
-    type: string;
+    type?: string;
 }

@@ -59,52 +59,82 @@ export class ShapeService {
 
   async findAll() {
     const shapes = await this.db.runInTransaction(async (client) => {
-      const result = await client.query<Pick<Category, 'color' | 'icon' | 'parent_id' | 'element_type'> & { category_name: string, category_id: string } & Pick<Shape, 'id' | 'properties' | 'geom' | 'created_at' | 'updated_at'>>(`
-        SELECT
-        c.id as category_id, 
-        c.name as category_name, 
-        c.color, 
-        c.icon, 
-        c.parent_id, 
-        c.element_type, 
-        s.id, 
-        s.properties, 
-        ST_AsGeoJSON(s.geom)::json as geom, 
-        s.created_at, 
-        s.updated_at FROM shapes as s
-        JOIN public.shapes_categories as sc on sc.shape_id = s.id 
-        JOIN public.categories as c on sc.category_id = c.id`
-      );
-      return result.rows.map(({ id, geom, properties, created_at, updated_at, category_name, category_id, color, element_type, icon, parent_id }) => {
-        return {
-          type: 'Feature',
-          geometry: geom,
-          properties: {
-            ...properties,
-            category_name,
-            category_id,
-            color,
-            element_type,
-            icon,
-            parent_id,
-            id,
-            created_at,
-            updated_at
+      const queryResult = await this.db.runInTransaction(async (client) => {
+        const shapes = await client.query<Shape>(`
+          SELECT
+          id,
+          properties, 
+          ST_AsGeoJSON(geom)::json as geom, 
+          created_at, 
+          updated_at FROM shapes`
+        );
+
+        return await Promise.all(shapes.rows.map(async shape => {
+          const relatedCategories = await client.query<Category>(`
+            SELECT * FROM public.categories as c
+            JOIN shapes_categories as sc on c.id = sc.category_id
+            WHERE sc.shape_id = $1  
+          `, [shape.id]);
+
+          return {
+            type: 'Feature',
+            geometry: shape.geom,
+            properties: {
+              ...shape.properties,
+              categories: relatedCategories.rows,
+              id: shape.id,
+              updated_at: shape.updated_at,
+              created_at: shape.created_at
+            }
           }
-        }
+
+        }))
+
+
       });
+      return queryResult
     })
     return shapes
   }
 
   async findOne(id: string) {
     const shapeId = UUID.fromString(id);
-    const shape = await this.db.runInTransaction(async (client) => {
-      const result = await client.query<Shape>('SELECT * FROM shapes WHERE id = $1', [shapeId.getValue()]);
-      return result.rows[0];
-    })
-    if (!shape) throw new NotFoundException('Shape not found')
-    return shape;
+    const queryResult = await this.db.runInTransaction(async (client) => {
+
+      const shape = await client.query<Shape>(`
+        SELECT
+        id,
+        properties, 
+        ST_AsGeoJSON(geom)::json as geom, 
+        created_at, 
+        updated_at FROM shapes WHERE id = $1`, [shapeId.getValue()]
+      );
+
+      const relatedCategories = await client.query<Category>(`
+        SELECT * FROM public.categories as c
+        JOIN shapes_categories as sc on c.id = sc.category_id
+        WHERE sc.shape_id = $1  
+      `, [shapeId.getValue()])
+
+
+      if (shape.rowCount === 0) throw new NotFoundException('Shape not found')
+
+      const shapeResult = shape.rows[0];
+      const relatedCategoriesResult = relatedCategories.rows;
+
+      return {
+        type: 'Feature',
+        geometry: shapeResult.geom,
+        properties: {
+          ...shapeResult.properties,
+          categories: relatedCategoriesResult,
+          id,
+          updated_at: shapeResult.updated_at,
+          created_at: shapeResult.created_at
+        }
+      }
+    });
+    return queryResult
   }
 
   async update(id: string, updateShapeDto: UpdateShapeDto) {
