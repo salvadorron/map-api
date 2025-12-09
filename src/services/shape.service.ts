@@ -14,27 +14,18 @@ export class ShapeService {
   async create({ geom, properties = {}, category_ids }: CreateShapeDto) {
     const shapeId = UUID.create()
     const shape = await this.db.runInTransaction(async (client) => {
-      await client.query<Shape>('INSERT INTO shapes (id, properties, geom, created_at, updated_at) VALUES ($1, $2, ST_GeomFromGeoJSON($3), $4, $5) RETURNING created_at, updated_at', [shapeId.getValue(), properties, geom, new Date(), new Date()])
+      const insertResult = await client.query<Shape>('INSERT INTO shapes (id, properties, geom, created_at, updated_at) VALUES ($1, $2, ST_GeomFromGeoJSON($3), $4, $5) RETURNING created_at, updated_at', [shapeId.getValue(), properties, geom, new Date(), new Date()])
+      const { created_at, updated_at } = insertResult.rows[0];
 
       for await (const categoryId of category_ids) {
         await client.query<Category>('INSERT INTO shapes_categories (shape_id, category_id) VALUES($1,$2)', [shapeId.getValue(), categoryId]);
       }
 
-      const result = await client.query<Pick<Category, 'name' | 'color' | 'icon' | 'parent_id' | 'element_type'> & Pick<Shape, 'created_at' | 'updated_at'>>(`
-        SELECT 
-        c.name, 
-        c.color, 
-        c.icon, 
-        c.parent_id, 
-        c.element_type,
-        s.created_at, 
-        s.updated_at
-        from shapes as s
-        JOIN public.shapes_categories as sc on sc.shape_id = s.id
-        JOIN public.categories as c on sc.category_id = c.id
-        `)
-
-      const { name, color, icon, parent_id, element_type, created_at, updated_at } = result.rows[0];
+      const relatedCategories = await client.query<Category>(`
+        SELECT * FROM public.categories as c
+        JOIN shapes_categories as sc on c.id = sc.category_id
+        WHERE sc.shape_id = $1  
+      `, [shapeId.getValue()]);
 
       return {
         type: 'Feature',
@@ -42,12 +33,7 @@ export class ShapeService {
         properties: {
           ...properties,
           id: shapeId.getValue(),
-          category_ids,
-          category_name: name,
-          color,
-          icon,
-          parent_id,
-          element_type,
+          categories: relatedCategories.rows,
           created_at,
           updated_at
         },
