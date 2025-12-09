@@ -1,5 +1,6 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
 import { CreateFormDto } from 'src/dto/create-form.dto';
+import { FormFilters } from 'src/dto/filters.dto';
 import { UpdateFormDto } from 'src/dto/update-form.dto';
 import { FormService } from 'src/services/form.service';
 
@@ -13,8 +14,8 @@ export class FormController {
   }
 
   @Get()
-  findAll() {
-    return this.formService.findAll();
+  findAll(@Query() filters: FormFilters) {
+    return this.formService.findAll(filters);
   }
 
   @Get(':id')

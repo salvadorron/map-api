@@ -1,13 +1,14 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PgService } from 'src/database/pg-config.service';
 import { CreateFormDto } from 'src/dto/create-form.dto';
+import { FormFilters } from 'src/dto/filters.dto';
 import { UpdateFormDto } from 'src/dto/update-form.dto';
 import { Form } from 'src/entities/form.entity';
 import { UUID } from 'src/helpers/uuid';
 
 @Injectable()
 export class FormService {
-  constructor(private readonly db: PgService) {}
+  constructor(private readonly db: PgService) { }
 
   async create(createFormDto: CreateFormDto) {
     const { inputs, title, category_id, tag } = createFormDto;
@@ -19,9 +20,10 @@ export class FormService {
     return form;
   }
 
-  async findAll() {
+  async findAll(filters: FormFilters = {}) {
     const forms = await this.db.runInTransaction(async (client) => {
-      const result = await client.query<Form>('SELECT * FROM public.forms');
+      const { query, values } = this.buildQuery(filters);
+      const result = await client.query<Form>(query, values);
       return result.rows;
     })
     return forms;
@@ -42,7 +44,7 @@ export class FormService {
     const keys = Object.keys(updateFormDto);
     const values = Object.values(updateFormDto);
 
-    if(keys.length === 0 || values.length === 0) throw new BadRequestException('Must be at least one property to patch')
+    if (keys.length === 0 || values.length === 0) throw new BadRequestException('Must be at least one property to patch')
 
     const setString = keys.map((key, index) => {
       return `"${key}" = $${index + 1}`;
@@ -59,7 +61,7 @@ export class FormService {
         RETURNING *
       `;
       const result = await client.query<Form>(query, values);
-      if(result.rowCount === 0) throw new NotFoundException(`Form with ID ${id} not found.`)
+      if (result.rowCount === 0) throw new NotFoundException(`Form with ID ${id} not found.`)
       return result.rows[0];
     })
     return form;
@@ -73,5 +75,13 @@ export class FormService {
     })
     if (!form) throw new NotFoundException('Form not found')
     return { message: `Form with ID: (${form.id}) has deleted successfully!` };
+  }
+
+  private buildQuery = (filters: FormFilters = {}) => {
+    if (filters.category_ids) {
+      const splittedCategories = filters.category_ids.split(',')
+      return { query: 'SELECT * FROM public.forms WHERE category_id = ANY($1::uuid[])', values: [splittedCategories] }
+    }
+    return { query: 'SELECT * FROM public.forms', values: undefined }
   }
 }

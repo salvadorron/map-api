@@ -1,9 +1,12 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PgService } from 'src/database/pg-config.service';
 import { CreateCategoryDto } from 'src/dto/create-category.dto';
+import { CategoryFilters } from 'src/dto/filters.dto';
 import { UpdateCategoryDto } from 'src/dto/update-category.dto';
 import { Category } from 'src/entities/category.entity';
 import { UUID } from 'src/helpers/uuid';
+
+
 
 @Injectable()
 export class CategoryService {
@@ -19,9 +22,10 @@ export class CategoryService {
     return category;
   }
 
-  async findAll() {
+  async findAll(filters: CategoryFilters = {}) {
+    const { query, values } = this.buildQuery(filters);
     const categories = await this.db.runInTransaction(async (client) => {
-      const result = await client.query<Category>('SELECT * FROM public.categories');
+      const result = await client.query<Category>(query, values);
       return result.rows;
     })
     return categories;
@@ -42,7 +46,7 @@ export class CategoryService {
     const keys = Object.keys(updateCategoryDto);
     const values = Object.values(updateCategoryDto);
 
-    if(keys.length === 0 || values.length === 0) throw new BadRequestException('Must be at least one property to patch')
+    if (keys.length === 0 || values.length === 0) throw new BadRequestException('Must be at least one property to patch')
 
     const setString = keys.map((key, index) => {
       return `"${key}" = $${index + 1}`;
@@ -59,7 +63,7 @@ export class CategoryService {
         RETURNING *
       `;
       const result = await client.query<Category>(query, values);
-      if(result.rowCount === 0) throw new NotFoundException(`Category with ID ${id} not found.`)
+      if (result.rowCount === 0) throw new NotFoundException(`Category with ID ${id} not found.`)
       return result.rows[0];
     })
     return category;
@@ -73,5 +77,15 @@ export class CategoryService {
     })
     if (!deletedCategory) throw new NotFoundException('Category not found');
     return { message: `Category with ID: (${deletedCategory.id}) has deleted successfully!` };
+  }
+
+  private buildQuery = (filters: CategoryFilters = {}) => {
+    if (filters.parent_ids) {
+      console.log(filters.parent_ids)
+      const parentIds = filters.parent_ids.split(',');
+      return { query: 'SELECT * FROM public.categories WHERE parent_id = ANY($1::uuid[])', values: [parentIds] }
+    }
+
+    return { query: 'SELECT * FROM public.categories', values: undefined }
   }
 }
