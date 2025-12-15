@@ -1,4 +1,4 @@
-import { IsOptional, IsString } from "class-validator";
+import { IsOptional, IsString, IsUUID } from "class-validator";
 
 export class CreateCategoryDto {
     @IsString({ message: 'name is required.' })
@@ -13,7 +13,7 @@ export class CreateCategoryDto {
     color?: string
 
     @IsOptional()
-    @IsString()
+    @IsUUID('4', { message: 'parent_id must be a valid UUID.' })
     parent_id?: string
 
     @IsOptional()

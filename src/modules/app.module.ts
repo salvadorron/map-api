@@ -10,6 +10,10 @@ import { ParrishModule } from "./parrish.module";
 import { AppController } from "src/controllers/app.controller";
 import { AppService } from "src/services/app.service";
 import { APP_PIPE } from "@nestjs/core";
+import { UsersModule } from './users.module';
+import { AuthModule } from './auth.module';
+import { RoleModule } from './role.module';
+import { InstitutionModule } from './institution.module';
 
 
 @Module({
@@ -23,7 +27,11 @@ import { APP_PIPE } from "@nestjs/core";
     FormModule,
     FilledFormModule,
     MunicipalityModule,
-    ParrishModule
+    ParrishModule,
+    UsersModule,
+    AuthModule,
+    RoleModule,
+    InstitutionModule
   ],
   controllers: [AppController],
   providers: [

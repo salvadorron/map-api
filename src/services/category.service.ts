@@ -14,8 +14,12 @@ export class CategoryService {
   async create(createCategoryDto: CreateCategoryDto) {
     const { name, color = null, element_type = null, icon = null, parent_id = null } = createCategoryDto;
     const categoryId = UUID.create();
+    const parentIdValue = parent_id ? UUID.fromString(parent_id).getValue() : null;
     const category = await this.db.runInTransaction(async (client) => {
-      const result = await client.query<Category>('INSERT INTO public.categories (id, name, icon, color, parent_id, element_type, created_at, updated_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *', [categoryId.getValue(), name, icon, color, parent_id, element_type, new Date(), new Date()]);
+      const result = await client.query<Category>(
+        'INSERT INTO public.categories (id, name, icon, color, parent_id, element_type, created_at, updated_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *',
+        [categoryId.getValue(), name, icon, color, parentIdValue, element_type, new Date(), new Date()]
+      );
       const categoryDone = result.rows[0]
       return categoryDone
     })
@@ -43,26 +47,41 @@ export class CategoryService {
 
   async update(id: string, updateCategoryDto: UpdateCategoryDto) {
     const categoryId = UUID.fromString(id);
-    const keys = Object.keys(updateCategoryDto);
-    const values = Object.values(updateCategoryDto);
+    const { parent_id, ...otherFields } = updateCategoryDto;
+    const keys = Object.keys(otherFields);
+    const values = Object.values(otherFields);
 
-    if (keys.length === 0 || values.length === 0) throw new BadRequestException('Must be at least one property to patch')
-
-    const setString = keys.map((key, index) => {
-      return `"${key}" = $${index + 1}`;
-    }).join(', ');
-
-    values.push(new Date());
-    values.push(categoryId.getValue())
+    if (keys.length === 0 && parent_id === undefined) throw new BadRequestException('Must be at least one property to patch')
 
     const category = await this.db.runInTransaction(async (client) => {
+      const updates: string[] = [];
+      const updateValues: any[] = [];
+      let paramIndex = 1;
+
+      // Agregar campos normales
+      keys.forEach(key => {
+        updates.push(`"${key}" = $${paramIndex}`);
+        updateValues.push(otherFields[key]);
+        paramIndex++;
+      });
+
+      // Manejar parent_id con conversión a UUID
+      if (parent_id !== undefined) {
+        updates.push(`parent_id = $${paramIndex}`);
+        updateValues.push(parent_id ? UUID.fromString(parent_id).getValue() : null);
+        paramIndex++;
+      }
+
+      updates.push(`updated_at = NOW()`);
+      updateValues.push(categoryId.getValue());
+
       const query = `
         UPDATE public.categories
-        SET ${setString}, updated_at = $${values.length - 1}
-        WHERE "id" = $${values.length}
+        SET ${updates.join(', ')}
+        WHERE "id" = $${paramIndex}
         RETURNING *
       `;
-      const result = await client.query<Category>(query, values);
+      const result = await client.query<Category>(query, updateValues);
       if (result.rowCount === 0) throw new NotFoundException(`Category with ID ${id} not found.`)
       return result.rows[0];
     })

@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsUUID, ValidateNested, IsObject } from "class-validator";
+import { IsString, IsNotEmpty, IsUUID, ValidateNested, IsObject, IsOptional } from "class-validator";
 import { IsMapNotEmpty, RecordDto } from "./record.dto";
 import { Type } from "class-transformer";
 
@@ -22,5 +22,9 @@ export class CreateFilledFormDto {
     @IsString({ message: 'title must be a string.' })
     @IsNotEmpty({ message: 'title is required.' })
     title: string;
+
+    @IsOptional()
+    @IsUUID('4', { message: 'user_id must be a valid UUID.' })
+    user_id?: string | null;
 }
 

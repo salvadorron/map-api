@@ -14,10 +14,10 @@ export class CreateFormDto {
     @IsNotEmpty({ message: 'title is required.' })
     title: string;
 
-    @IsString({ message: 'category_id must be a string.' })
-    @IsUUID('4', { message: 'category_id must be a valid UUID.' })
-    @IsNotEmpty({ message: 'category_id is required.' })
-    category_id: string;
+    @IsArray({ message: 'category_ids must be an array.' })
+    @ArrayNotEmpty({ message: 'category_ids must not be empty.' })
+    @IsUUID('4', { each: true, message: 'Each category_id must be a valid UUID.' })
+    category_ids: string[];
     
     @IsString({ message: 'tag must be a string.' })
     @IsOptional()

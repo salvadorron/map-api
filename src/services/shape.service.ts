@@ -11,10 +11,14 @@ export class ShapeService {
 
   constructor(private readonly db: PgService) { }
 
-  async create({ geom, properties = {}, category_ids }: CreateShapeDto) {
+  async create({ geom, properties = {}, category_ids, institution_id, is_public = false }: CreateShapeDto) {
     const shapeId = UUID.create()
     const shape = await this.db.runInTransaction(async (client) => {
-      const insertResult = await client.query<Shape>('INSERT INTO shapes (id, properties, geom, created_at, updated_at) VALUES ($1, $2, ST_GeomFromGeoJSON($3), $4, $5) RETURNING created_at, updated_at', [shapeId.getValue(), properties, geom, new Date(), new Date()])
+      const institutionIdValue = institution_id ? UUID.fromString(institution_id).getValue() : null;
+      const insertResult = await client.query<Shape>(
+        'INSERT INTO shapes (id, properties, geom, institution_id, is_public, created_at, updated_at) VALUES ($1, $2, ST_GeomFromGeoJSON($3), $4, $5, $6, $7) RETURNING created_at, updated_at',
+        [shapeId.getValue(), properties, geom, institutionIdValue, is_public, new Date(), new Date()]
+      );
       const { created_at, updated_at } = insertResult.rows[0];
 
       for await (const categoryId of category_ids) {
@@ -50,7 +54,9 @@ export class ShapeService {
           SELECT
           id,
           properties, 
-          ST_AsGeoJSON(geom)::json as geom, 
+          ST_AsGeoJSON(geom)::json as geom,
+          institution_id,
+          is_public,
           created_at, 
           updated_at FROM shapes`
         );
@@ -91,7 +97,9 @@ export class ShapeService {
         SELECT
         id,
         properties, 
-        ST_AsGeoJSON(geom)::json as geom, 
+        ST_AsGeoJSON(geom)::json as geom,
+        institution_id,
+        is_public,
         created_at, 
         updated_at FROM shapes WHERE id = $1`, [shapeId.getValue()]
       );
@@ -125,32 +133,113 @@ export class ShapeService {
 
   async update(id: string, updateShapeDto: UpdateShapeDto) {
     const shapeId = UUID.fromString(id);
-    const keys = Object.keys(updateShapeDto);
-    const values = Object.values(updateShapeDto);
+    const { category_ids, geom, institution_id, ...otherFields } = updateShapeDto;
+    const keys = Object.keys(otherFields);
+    const values: any[] = [];
 
+    // Construir valores para campos directos
+    keys.forEach(key => {
+      values.push(otherFields[key]);
+    });
 
-    if (keys.length === 0 || values.length === 0) throw new BadRequestException('Must be at least one property to patch')
-
-    const setString = keys.map((key, index) => {
-      return `"${key}" = $${index + 1}`;
-    }).join(', ');
-
-    values.push(new Date());
-    values.push(shapeId.getValue())
+    if (keys.length === 0 && !category_ids && !geom && institution_id === undefined && updateShapeDto.is_public === undefined) {
+      throw new BadRequestException('Must be at least one property to patch');
+    }
 
     const shape = await this.db.runInTransaction(async (client) => {
-      const query = `
-        UPDATE shapes
-        SET ${setString}, updated_at = $${values.length - 1}
-        WHERE "id" = $${values.length}
-        RETURNING *
-      `;
-      const result = await client.query<Shape>(query, values);
-      if (result.rowCount === 0) throw new NotFoundException(`Shape with ID ${id} not found.`)
-      return result.rows[0];
+      // Actualizar campos directos del shape
+      if (keys.length > 0 || geom || institution_id !== undefined || updateShapeDto.is_public !== undefined) {
+        const updates: string[] = [];
+        const updateValues: any[] = [];
+        let paramIndex = 1;
+
+        // Manejar campos normales
+        keys.forEach(key => {
+          updates.push(`"${key}" = $${paramIndex}`);
+          updateValues.push(otherFields[key]);
+          paramIndex++;
+        });
+
+        // Manejar geom si se proporciona
+        if (geom) {
+          updates.push(`geom = ST_GeomFromGeoJSON($${paramIndex})`);
+          updateValues.push(geom);
+          paramIndex++;
+        }
+
+        // Manejar institution_id
+        if (institution_id !== undefined) {
+          updates.push(`institution_id = $${paramIndex}`);
+          updateValues.push(institution_id ? UUID.fromString(institution_id).getValue() : null);
+          paramIndex++;
+        }
+
+        // Manejar is_public
+        if (updateShapeDto.is_public !== undefined) {
+          updates.push(`is_public = $${paramIndex}`);
+          updateValues.push(updateShapeDto.is_public);
+          paramIndex++;
+        }
+
+        updates.push(`updated_at = NOW()`);
+        updateValues.push(shapeId.getValue());
+
+        const query = `
+          UPDATE shapes
+          SET ${updates.join(', ')}
+          WHERE id = $${paramIndex}
+          RETURNING id, properties, ST_AsGeoJSON(geom)::json as geom, institution_id, is_public, created_at, updated_at
+        `;
+        await client.query<Shape>(query, updateValues);
+      }
+
+      // Actualizar relaciones con categorías si se proporciona category_ids
+      if (category_ids !== undefined) {
+        // Eliminar relaciones existentes
+        await client.query(
+          'DELETE FROM shapes_categories WHERE shape_id = $1',
+          [shapeId.getValue()]
+        );
+
+        // Insertar nuevas relaciones
+        for (const categoryId of category_ids) {
+          await client.query(
+            'INSERT INTO shapes_categories (shape_id, category_id) VALUES($1,$2)',
+            [shapeId.getValue(), categoryId]
+          );
+        }
+      }
+
+      // Retornar el shape actualizado con sus categorías
+      const shapeResult = await client.query<Shape>(`
+        SELECT id, properties, ST_AsGeoJSON(geom)::json as geom, institution_id, is_public, created_at, updated_at
+        FROM shapes WHERE id = $1
+      `, [shapeId.getValue()]);
+
+      if (shapeResult.rowCount === 0) throw new NotFoundException(`Shape with ID ${id} not found.`);
+
+      const shapeData = shapeResult.rows[0];
+      const relatedCategories = await client.query<Category>(`
+        SELECT * FROM public.categories as c
+        JOIN shapes_categories as sc on c.id = sc.category_id
+        WHERE sc.shape_id = $1
+      `, [shapeId.getValue()]);
+
+      return {
+        type: 'Feature',
+        geometry: shapeData.geom,
+        properties: {
+          ...shapeData.properties,
+          categories: relatedCategories.rows,
+          id: shapeData.id,
+          institution_id: shapeData.institution_id,
+          is_public: shapeData.is_public,
+          updated_at: shapeData.updated_at,
+          created_at: shapeData.created_at
+        }
+      };
     })
     return shape;
-
   }
 
   async remove(id: string) {

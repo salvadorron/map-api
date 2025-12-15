@@ -10,11 +10,15 @@ import { UUID } from 'src/helpers/uuid';
 export class FilledFormService {
   constructor(private readonly db: PgService) { }
   async create(createFilledFormDto: CreateFilledFormDto) {
-    const { form_id, shape_id, records, title } = createFilledFormDto;
+    const { form_id, shape_id, records, title, user_id } = createFilledFormDto;
     const recordsObject = Object.fromEntries(records.entries());
     const filledFormId = UUID.create();
+    const userIdValue = user_id ? UUID.fromString(user_id).getValue() : null;
     const filledForm = await this.db.runInTransaction(async (client) => {
-      const result = await client.query<FilledForm>('INSERT INTO public.filled_forms (id, form_id, shape_id, records, title, created_at, updated_at) VALUES($1,$2,$3,$4,$5,$6,$7) RETURNING *', [filledFormId.getValue(), form_id, shape_id, recordsObject, title, new Date(), new Date()]);
+      const result = await client.query<FilledForm>(
+        'INSERT INTO public.filled_forms (id, form_id, shape_id, records, title, user_id, created_at, updated_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *',
+        [filledFormId.getValue(), form_id, shape_id, recordsObject, title, userIdValue, new Date(), new Date()]
+      );
       return result.rows[0];
     })
     return filledForm;
@@ -38,30 +42,52 @@ export class FilledFormService {
   }
 
   async update(id: string, updateFilledFormDto: UpdateFilledFormDto) {
-
     const filledFormId = UUID.fromString(id);
+    const { user_id, records, ...otherFields } = updateFilledFormDto;
+    const keys = Object.keys(otherFields);
+    const values: any[] = [];
 
-    const keys = Object.keys(updateFilledFormDto);
-    const values = Object.values(updateFilledFormDto)
-      .map((value) => value instanceof Map ? Object.fromEntries(value.entries()) : value);
-
-    if (keys.length === 0 || values.length === 0) throw new BadRequestException('Must be at least one property to patch')
-
-    const setString = keys.map((key, index) => {
-      return `"${key}" = $${index + 1}`;
-    }).join(', ');
-
-    values.push(new Date());
-    values.push(filledFormId.getValue())
+    if (keys.length === 0 && user_id === undefined && records === undefined) {
+      throw new BadRequestException('Must be at least one property to patch');
+    }
 
     const filledForm = await this.db.runInTransaction(async (client) => {
+      const updates: string[] = [];
+      const updateValues: any[] = [];
+      let paramIndex = 1;
+
+      // Manejar campos normales
+      keys.forEach(key => {
+        updates.push(`"${key}" = $${paramIndex}`);
+        updateValues.push(otherFields[key]);
+        paramIndex++;
+      });
+
+      // Manejar records (convertir Map a objeto si es necesario)
+      if (records !== undefined) {
+        updates.push(`records = $${paramIndex}`);
+        const recordsObject = records instanceof Map ? Object.fromEntries(records.entries()) : records;
+        updateValues.push(recordsObject);
+        paramIndex++;
+      }
+
+      // Manejar user_id con conversión a UUID
+      if (user_id !== undefined) {
+        updates.push(`user_id = $${paramIndex}`);
+        updateValues.push(user_id ? UUID.fromString(user_id).getValue() : null);
+        paramIndex++;
+      }
+
+      updates.push(`updated_at = NOW()`);
+      updateValues.push(filledFormId.getValue());
+
       const query = `
         UPDATE public.filled_forms
-        SET ${setString}, updated_at = $${values.length - 1}
-        WHERE id = $${values.length}
+        SET ${updates.join(', ')}
+        WHERE id = $${paramIndex}
         RETURNING *
       `;
-      const result = await client.query<FilledForm>(query, values);
+      const result = await client.query<FilledForm>(query, updateValues);
       if (result.rowCount === 0) throw new NotFoundException(`Filled form with ID ${id} not found.`)
       return result.rows[0];
     })
