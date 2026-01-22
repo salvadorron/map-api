@@ -4,7 +4,7 @@ export class User {
     username: string
     email: string
     password?: string // Opcional para no exponer en respuestas
-    role_id: string
+    role: string
     institution_id?: string | null
     updated_at: string
     created_at: string

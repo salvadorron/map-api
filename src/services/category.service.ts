@@ -1,18 +1,20 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { AsyncLocalStorage } from 'async_hooks';
 import { PgService } from 'src/database/pg-config.service';
 import { CreateCategoryDto } from 'src/dto/create-category.dto';
 import { CategoryFilters } from 'src/dto/filters.dto';
 import { UpdateCategoryDto } from 'src/dto/update-category.dto';
 import { Category } from 'src/entities/category.entity';
 import { UUID } from 'src/helpers/uuid';
+import { AlsStore } from 'src/modules/app.module';
 
 
 
 @Injectable()
 export class CategoryService {
-  constructor(readonly db: PgService) { }
+  constructor(readonly db: PgService, private readonly als: AsyncLocalStorage<AlsStore>) { }
   async create(createCategoryDto: CreateCategoryDto) {
-    const { name, color = null, element_type = null, icon = null, parent_id = null } = createCategoryDto;
+    const { name, color = null, element_type = null, icon = null, parent_id = null, institution_id = null } = createCategoryDto;
     const categoryId = UUID.create();
     const parentIdValue = parent_id ? UUID.fromString(parent_id).getValue() : null;
     const category = await this.db.runInTransaction(async (client) => {
@@ -20,13 +22,18 @@ export class CategoryService {
         'INSERT INTO public.categories (id, name, icon, color, parent_id, element_type, created_at, updated_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *',
         [categoryId.getValue(), name, icon, color, parentIdValue, element_type, new Date(), new Date()]
       );
+
+      if (institution_id) {
+        await client.query('INSERT INTO public.institution_category_assignment (institution_id, category_id) VALUES($1,$2)', [institution_id, categoryId.getValue()]);
+      }
+
       const categoryDone = result.rows[0]
       return categoryDone
     })
     return category;
   }
 
-  async findAll(filters: CategoryFilters = {}) {
+  async findAll(filters: CategoryFilters = { is_public: 'false' }) {
     const { query, values } = this.buildQuery(filters);
     const categories = await this.db.runInTransaction(async (client) => {
       const result = await client.query<Category>(query, values);
@@ -98,13 +105,21 @@ export class CategoryService {
     return { message: `Category with ID: (${deletedCategory.id}) has deleted successfully!` };
   }
 
-  private buildQuery = (filters: CategoryFilters = {}) => {
+  private buildQuery = (filters: CategoryFilters = { is_public: 'false' }) => {
+    const store = this.als.getStore();
+    if (store?.institutionId && filters.is_public === 'false') {
+      if (filters.parent_ids) {
+        const parentIds = filters.parent_ids.split(',');
+        return { query: 'SELECT * FROM public.categories JOIN public.institution_category_assignment ON public.categories.id = public.institution_category_assignment.category_id WHERE public.institution_category_assignment.institution_id = $1 AND parent_id = ANY($2::uuid[])', values: [store.institutionId, parentIds] }
+      }
+      return { query: 'SELECT * FROM public.categories JOIN public.institution_category_assignment ON public.categories.id = public.institution_category_assignment.category_id WHERE public.institution_category_assignment.institution_id = $1', values: [store.institutionId] }
+    }
+
     if (filters.parent_ids) {
-      console.log(filters.parent_ids)
       const parentIds = filters.parent_ids.split(',');
       return { query: 'SELECT * FROM public.categories WHERE parent_id = ANY($1::uuid[])', values: [parentIds] }
     }
-
     return { query: 'SELECT * FROM public.categories', values: undefined }
+
   }
 }

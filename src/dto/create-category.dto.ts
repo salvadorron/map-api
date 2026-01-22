@@ -13,6 +13,10 @@ export class CreateCategoryDto {
     color?: string
 
     @IsOptional()
+    @IsUUID('4', { message: 'institution_id must be a valid UUID.' })
+    institution_id?: string
+
+    @IsOptional()
     @IsUUID('4', { message: 'parent_id must be a valid UUID.' })
     parent_id?: string
 

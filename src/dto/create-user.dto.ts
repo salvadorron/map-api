@@ -1,4 +1,10 @@
-import { IsString, IsUUID, IsOptional } from "class-validator";
+import { IsString, IsUUID, IsOptional, IsEnum } from "class-validator";
+
+export enum UserRole {
+    SUPER_ADMIN = 'SUPER_ADMIN',
+    ADMIN_USER = 'ADMIN_USER',
+    OPERATOR_USER = 'OPERATOR_USER',
+}
 
 export class CreateUserDto {
     @IsString()
@@ -13,8 +19,8 @@ export class CreateUserDto {
     @IsString()
     password: string
 
-    @IsUUID()
-    role_id: string
+    @IsEnum(UserRole)
+    role: string
 
     @IsOptional()
     @IsUUID()

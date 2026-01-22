@@ -19,14 +19,14 @@ export class UsersService {
     const hashedPassword = await this.hashPassword(createUserDto.password);
     const user = await this.db.runInTransaction(async (client) => {
       const result = await client.query(
-        'INSERT INTO public.users (id, fullname, email, username, password, role_id, institution_id) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',
+        'INSERT INTO public.users (id, fullname, email, username, password, role, institution_id) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',
         [
           UUID.create().getValue(),
           createUserDto.fullname,
           createUserDto.email,
           createUserDto.username,
           hashedPassword,
-          UUID.fromString(createUserDto.role_id).getValue(),
+          createUserDto.role,
           createUserDto.institution_id ? UUID.fromString(createUserDto.institution_id).getValue() : null
         ]
       );
@@ -37,7 +37,7 @@ export class UsersService {
 
   async findAll() {
     const users = await this.db.runInTransaction(async (client) => {
-      const result = await client.query('SELECT id, fullname, email, username, role_id, institution_id, updated_at, created_at FROM public.users');
+      const result = await client.query('SELECT id, fullname, email, username, role, institution_id, updated_at, created_at FROM public.users');
       return result.rows;
     });
     return users;
@@ -46,7 +46,7 @@ export class UsersService {
   async findOne(id: string) {
     const user = await this.db.runInTransaction(async (client) => {
       const result = await client.query(
-        'SELECT id, fullname, email, username, role_id, institution_id, updated_at, created_at FROM public.users WHERE id = $1',
+        'SELECT id, fullname, email, username, role, institution_id, updated_at, created_at FROM public.users WHERE id = $1',
         [UUID.fromString(id).getValue()]
       );
       return result.rows[0];
@@ -116,9 +116,9 @@ export class UsersService {
         paramIndex++;
       }
 
-      if (updateUserDto.role_id !== undefined) {
-        updates.push(`role_id = $${paramIndex}`);
-        values.push(UUID.fromString(updateUserDto.role_id).getValue());
+      if (updateUserDto.role !== undefined) {
+        updates.push(`role = $${paramIndex}`);
+        values.push(updateUserDto.role);
         paramIndex++;
       }
 
@@ -135,7 +135,7 @@ export class UsersService {
       updates.push(`updated_at = NOW()`);
       values.push(userId);
 
-      const query = `UPDATE public.users SET ${updates.join(', ')} WHERE id = $${paramIndex} RETURNING id, fullname, email, username, role_id, institution_id, updated_at, created_at`;
+      const query = `UPDATE public.users SET ${updates.join(', ')} WHERE id = $${paramIndex} RETURNING id, fullname, email, username, role, institution_id, updated_at, created_at`;
       const result = await client.query(query, values);
       return result.rows[0];
     });
@@ -145,7 +145,7 @@ export class UsersService {
   async remove(id: string) {
     const user = await this.db.runInTransaction(async (client) => {
       const result = await client.query(
-        'DELETE FROM public.users WHERE id = $1 RETURNING id, fullname, email, username, role_id, institution_id, updated_at, created_at',
+        'DELETE FROM public.users WHERE id = $1 RETURNING id, fullname, email, username, role, institution_id, updated_at, created_at',
         [UUID.fromString(id).getValue()]
       );
       return result.rows[0];

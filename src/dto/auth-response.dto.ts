@@ -5,7 +5,7 @@ export class AuthResponseDto {
     fullname: string;
     username: string;
     email: string;
-    role_id: string;
+    role: string;
     institution_id?: string | null;
   };
 }

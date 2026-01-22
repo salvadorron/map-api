@@ -10,14 +10,19 @@ export class ParrishService {
   constructor(private readonly db: PgService) { }
 
   private buildQuery = (filters: ParrishFilters = {}) => {
-    if (filters.municipality_id) {
-      const id = UUID.fromString(filters.municipality_id);
-      return { query: 'SELECT * FROM public.parrishes WHERE municipality_id = $1', values: [id.getValue()] };
+    if(filters.municipalityIds && filters.municipalityIds.includes('ALL')) {
+      filters.municipalityIds = undefined;
+    }
+
+    if (filters.municipalityIds) {
+      const ids = filters.municipalityIds.split(',').map(id => id.trim());
+      return { query: 'SELECT * FROM public.parrishes WHERE municipality_id = ANY($1::uuid[])', values: [ids] };
     }
     return { query: 'SELECT * FROM public.parrishes', values: undefined }
   }
 
   async findAll(filters: ParrishFilters = {}) {
+    console.log(filters);
     const { query, values } = this.buildQuery(filters);
 
     return this.db.runInTransaction(async (client) => {

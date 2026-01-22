@@ -1,9 +1,9 @@
-import { ArrayNotEmpty, IsArray, IsOptional, IsString } from "class-validator";
+import { IsBoolean, IsBooleanString, IsOptional, IsString } from "class-validator";
 
 export class ParrishFilters {
     @IsOptional()
     @IsString()
-    municipality_id?: string
+    municipalityIds?: string
 }
 
 export class FilledFormFilters {
@@ -17,9 +17,29 @@ export class CategoryFilters {
     @IsString({ each: true })
     parent_ids?: string
 
+    @IsOptional()
+    @IsBooleanString()
+    is_public?: string = 'false'
 }
+
 export class FormFilters {
     @IsOptional()
     @IsString({ each: true })
     category_ids?: string
+}
+
+export class ShapeFilters {
+
+    @IsOptional()
+    @IsString()
+    status?: string
+
+
+    @IsOptional()
+    @IsString()
+    category?: string
+
+    @IsOptional()
+    @IsString()
+    municipality?: string
 }

@@ -1,23 +1,26 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { AsyncLocalStorage } from 'async_hooks';
 import { PgService } from 'src/database/pg-config.service';
 import { CreateShapeDto } from 'src/dto/create-shape.dto';
+import { ShapeFilters } from 'src/dto/filters.dto';
 import { UpdateShapeDto } from 'src/dto/update-shape.dto';
 import { Category } from 'src/entities/category.entity';
 import { Shape } from 'src/entities/shape.entity';
 import { UUID } from 'src/helpers/uuid';
+import { AlsStore } from 'src/modules/app.module';
 
 @Injectable()
 export class ShapeService {
 
-  constructor(private readonly db: PgService) { }
+  constructor(private readonly db: PgService, private readonly als: AsyncLocalStorage<AlsStore>) { }
 
-  async create({ geom, properties = {}, category_ids, institution_id, is_public = false }: CreateShapeDto) {
+  async create({ geom, properties = {}, category_ids, institution_id }: CreateShapeDto) {
     const shapeId = UUID.create()
     const shape = await this.db.runInTransaction(async (client) => {
       const institutionIdValue = institution_id ? UUID.fromString(institution_id).getValue() : null;
       const insertResult = await client.query<Shape>(
-        'INSERT INTO shapes (id, properties, geom, institution_id, is_public, created_at, updated_at) VALUES ($1, $2, ST_GeomFromGeoJSON($3), $4, $5, $6, $7) RETURNING created_at, updated_at',
-        [shapeId.getValue(), properties, geom, institutionIdValue, is_public, new Date(), new Date()]
+        'INSERT INTO shapes (id, properties, geom, institution_id, created_at, updated_at) VALUES ($1, $2, ST_GeomFromGeoJSON($3), $4, $5, $6) RETURNING created_at, updated_at',
+        [shapeId.getValue(), properties, geom, institutionIdValue, new Date(), new Date()]
       );
       const { created_at, updated_at } = insertResult.rows[0];
 
@@ -47,46 +50,41 @@ export class ShapeService {
     return shape;
   }
 
-  async findAll() {
-    const shapes = await this.db.runInTransaction(async (client) => {
-      const queryResult = await this.db.runInTransaction(async (client) => {
-        const shapes = await client.query<Shape>(`
-          SELECT
-          id,
-          properties, 
-          ST_AsGeoJSON(geom)::json as geom,
-          institution_id,
-          is_public,
-          created_at, 
-          updated_at FROM shapes`
-        );
+  async findAll(filters: ShapeFilters) {
+    const queryResult = await this.db.runInTransaction(async (client) => {
 
-        return await Promise.all(shapes.rows.map(async shape => {
-          const relatedCategories = await client.query<Category>(`
+      const { query, values } = this.buildQuery(filters);
+
+      console.log(query, values);
+
+      const shapes = await client.query<Shape>(query, values);
+
+
+      return await Promise.all(shapes.rows.map(async shape => {
+        const relatedCategories = await client.query<Category>(`
             SELECT * FROM public.categories as c
             JOIN shapes_categories as sc on c.id = sc.category_id
             WHERE sc.shape_id = $1  
           `, [shape.id]);
 
-          return {
-            type: 'Feature',
-            geometry: shape.geom,
-            properties: {
-              ...shape.properties,
-              categories: relatedCategories.rows,
-              id: shape.id,
-              updated_at: shape.updated_at,
-              created_at: shape.created_at
-            }
+        return {
+          type: 'Feature',
+          geometry: shape.geom,
+          properties: {
+            ...shape.properties,
+            status: shape.status,
+            categories: relatedCategories.rows,
+            id: shape.id,
+            updated_at: shape.updated_at,
+            created_at: shape.created_at
           }
+        }
 
-        }))
+      }))
 
 
-      });
-      return queryResult
-    })
-    return shapes
+    });
+    return queryResult
   }
 
   async findOne(id: string) {
@@ -99,7 +97,7 @@ export class ShapeService {
         properties, 
         ST_AsGeoJSON(geom)::json as geom,
         institution_id,
-        is_public,
+        status,
         created_at, 
         updated_at FROM shapes WHERE id = $1`, [shapeId.getValue()]
       );
@@ -121,6 +119,7 @@ export class ShapeService {
         geometry: shapeResult.geom,
         properties: {
           ...shapeResult.properties,
+          status: shapeResult.status,
           categories: relatedCategoriesResult,
           id,
           updated_at: shapeResult.updated_at,
@@ -133,7 +132,7 @@ export class ShapeService {
 
   async update(id: string, updateShapeDto: UpdateShapeDto) {
     const shapeId = UUID.fromString(id);
-    const { category_ids, geom, institution_id, ...otherFields } = updateShapeDto;
+    const { category_ids, geom, institution_id, status, ...otherFields } = updateShapeDto;
     const keys = Object.keys(otherFields);
     const values: any[] = [];
 
@@ -142,13 +141,13 @@ export class ShapeService {
       values.push(otherFields[key]);
     });
 
-    if (keys.length === 0 && !category_ids && !geom && institution_id === undefined && updateShapeDto.is_public === undefined) {
+    if (keys.length === 0 && !category_ids && !geom && institution_id === undefined && status === undefined) {
       throw new BadRequestException('Must be at least one property to patch');
     }
 
     const shape = await this.db.runInTransaction(async (client) => {
       // Actualizar campos directos del shape
-      if (keys.length > 0 || geom || institution_id !== undefined || updateShapeDto.is_public !== undefined) {
+      if (keys.length > 0 || geom || institution_id !== undefined || status !== undefined) {
         const updates: string[] = [];
         const updateValues: any[] = [];
         let paramIndex = 1;
@@ -174,10 +173,10 @@ export class ShapeService {
           paramIndex++;
         }
 
-        // Manejar is_public
-        if (updateShapeDto.is_public !== undefined) {
-          updates.push(`is_public = $${paramIndex}`);
-          updateValues.push(updateShapeDto.is_public);
+        // Manejar status
+        if (status !== undefined) {
+          updates.push(`status = $${paramIndex}`);
+          updateValues.push(status);
           paramIndex++;
         }
 
@@ -188,7 +187,7 @@ export class ShapeService {
           UPDATE shapes
           SET ${updates.join(', ')}
           WHERE id = $${paramIndex}
-          RETURNING id, properties, ST_AsGeoJSON(geom)::json as geom, institution_id, is_public, created_at, updated_at
+          RETURNING id, properties, ST_AsGeoJSON(geom)::json as geom, institution_id, status, created_at, updated_at
         `;
         await client.query<Shape>(query, updateValues);
       }
@@ -212,7 +211,7 @@ export class ShapeService {
 
       // Retornar el shape actualizado con sus categorías
       const shapeResult = await client.query<Shape>(`
-        SELECT id, properties, ST_AsGeoJSON(geom)::json as geom, institution_id, is_public, created_at, updated_at
+        SELECT id, properties, ST_AsGeoJSON(geom)::json as geom, institution_id, status, created_at, updated_at
         FROM shapes WHERE id = $1
       `, [shapeId.getValue()]);
 
@@ -233,12 +232,12 @@ export class ShapeService {
           categories: relatedCategories.rows,
           id: shapeData.id,
           institution_id: shapeData.institution_id,
-          is_public: shapeData.is_public,
+          status: shapeData.status,
           updated_at: shapeData.updated_at,
           created_at: shapeData.created_at
         }
       };
-    })
+    }) 
     return shape;
   }
 
@@ -252,5 +251,59 @@ export class ShapeService {
     if (!deletedShape) throw new NotFoundException('Shape not found');
 
     return { message: `Shape with ID: (${deletedShape.id}) has deleted successfully!` };
+  }
+
+
+  private buildQuery(filters: ShapeFilters) {
+    const store = this.als.getStore();
+    const baseQuery = `
+      SELECT
+        id,
+        properties, 
+        ST_AsGeoJSON(geom)::json as geom,
+        institution_id,
+        status,
+        created_at, 
+        updated_at 
+        FROM shapes
+    `;
+
+    const conditions: string[] = [];
+    const values: any[] = [];
+    let paramIndex = 1;
+
+    // Agregar condición de institución si existe en el store
+    if (store?.institutionId) {
+      conditions.push(`institution_id = $${paramIndex}`);
+      values.push(store.institutionId);
+      paramIndex++;
+    }
+
+    // Agregar condición de status si se proporciona, sino usar 'APPROVED' por defecto
+    if (filters.status) {
+      conditions.push(`status = $${paramIndex}`);
+      values.push(filters.status);
+      paramIndex++;
+    } else if (!store?.institutionId) {
+      // Solo aplicar el filtro por defecto si no hay institución en el store
+      conditions.push(`status = 'APPROVED'`);
+    }
+
+    if (filters.municipality && !filters.municipality.includes('ALL')) {
+      const municipalities = filters.municipality.split(',').map(mun => mun.trim());
+      conditions.push(`properties->>'cod_mun' = ANY($${paramIndex}::text[])`);
+      values.push(municipalities);
+      paramIndex++;
+    }
+
+    // Construir la query final
+    const whereClause = conditions.length > 0 
+      ? `WHERE ${conditions.join(' AND ')}` 
+      : '';
+
+    return {
+      query: `${baseQuery} ${whereClause}`.trim(),
+      values: values.length > 0 ? values : undefined
+    };
   }
 }

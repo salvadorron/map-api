@@ -10,7 +10,7 @@ async function bootstrap() {
     whitelist: true,
     forbidNonWhitelisted: true,
     transformOptions: {
-      enableImplicitConversion: true
+      enableImplicitConversion: true,
     }
   }))
   await app.listen(process.env.PORT ?? 3000);

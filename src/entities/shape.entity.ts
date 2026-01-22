@@ -5,7 +5,7 @@ export class Shape {
     properties: GeoJsonProperties
     geom: Geometry
     institution_id?: string | null
-    is_public: boolean
+    status: string
     created_at: string
     updated_at: string
 }
