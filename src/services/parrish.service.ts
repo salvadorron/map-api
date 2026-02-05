@@ -1,43 +1,40 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { Model } from 'src/database/model.config';
 import { PgService } from 'src/database/pg-config.service';
 import { UUID } from 'src/helpers/uuid';
-import { QueryConfig } from 'pg';
 import { ParrishFilters } from 'src/dto/filters.dto';
 import { Parrish } from 'src/entities/parrish.entity';
+import { ParrishModel } from 'src/models/parrish.model';
 
 @Injectable()
 export class ParrishService {
-  constructor(private readonly db: PgService) { }
+  private _parrishModel: ParrishModel;
 
-  private buildQuery = (filters: ParrishFilters = {}) => {
-    if(filters.municipalityIds && filters.municipalityIds.includes('ALL')) {
-      filters.municipalityIds = undefined;
-    }
-
-    if (filters.municipalityIds) {
-      const ids = filters.municipalityIds.split(',').map(id => id.trim());
-      return { query: 'SELECT * FROM public.parrishes WHERE municipality_id = ANY($1::uuid[])', values: [ids] };
-    }
-    return { query: 'SELECT * FROM public.parrishes', values: undefined }
+  constructor(private readonly db: PgService) {
+    this._parrishModel = new ParrishModel(this.db);
   }
 
   async findAll(filters: ParrishFilters = {}) {
-    console.log(filters);
-    const { query, values } = this.buildQuery(filters);
+    const where: Record<string, any> = {};
 
-    return this.db.runInTransaction(async (client) => {
-      const result = await client.query<Parrish>(query, values);
-      return result.rows;
-    })
+    if (filters.municipalityIds && !filters.municipalityIds.includes('ALL')) {
+      const ids = filters.municipalityIds.split(',').map(id => id.trim());
+      where.municipality_id = { in: ids };
+    }
+
+    return this._parrishModel.findAll({ where });
   }
 
   async findOne(id: string) {
     const parrishId = UUID.fromString(id);
-    const parrish = await this.db.runInTransaction(async (client) => {
-      const result = await client.query<Parrish>('SELECT * FROM public.parrishes WHERE id = $1', [parrishId.getValue()]);
-      if (result.rowCount === 0) throw new NotFoundException(`Parrish with ID ${id} not found.`)
-      return result.rows[0];
-    })
+    const parrish = await this._parrishModel.findOne({ 
+      where: { id: parrishId.getValue() } 
+    });
+
+    if (!parrish) {
+      throw new NotFoundException(`Parrish with ID ${id} not found.`);
+    }
+
     return parrish;
   }
 }

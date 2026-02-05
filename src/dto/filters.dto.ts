@@ -1,3 +1,4 @@
+import { Type } from "class-transformer";
 import { IsBoolean, IsBooleanString, IsOptional, IsString } from "class-validator";
 
 export class ParrishFilters {
@@ -31,15 +32,23 @@ export class FormFilters {
 export class ShapeFilters {
 
     @IsOptional()
+    @IsBoolean()
+    @Type(() => Boolean)
+    is_public?: boolean
+
+    @IsOptional()
     @IsString()
     status?: string
 
+    @IsOptional()
+    @IsString()
+    category_ids?: string
 
     @IsOptional()
     @IsString()
-    category?: string
+    parrish_ids?: string
 
     @IsOptional()
     @IsString()
-    municipality?: string
+    municipality_ids?: string
 }

@@ -1,11 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import { PgService } from 'src/database/pg-config.service';
-import { Log } from 'src/entities/log.entity';
 import { UUID } from 'src/helpers/uuid';
+import { LogModel } from 'src/models/log.model';
 
 @Injectable()
 export class LogService {
-  constructor(private readonly db: PgService) {}
+  private _logModel: LogModel;
+
+  constructor(private readonly db: PgService) {
+    this._logModel = new LogModel(this.db);
+  }
 
   async create(data: {
     action: string;
@@ -16,50 +20,26 @@ export class LogService {
     ip_address?: string | null;
     user_agent?: string | null;
   }) {
-    if (!this.db) {
-      console.error('PgService no está disponible en LogService');
-      return;
-    }
-
     const logId = UUID.create();
-    await this.db.runInTransaction(async (client) => {
-      await client.query(
-        `INSERT INTO logs (id, action, resource_type, resource_id, user_id, details, ip_address, user_agent, created_at)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())`,
-        [
-          logId.getValue(),
-          data.action,
-          data.resource_type,
-          data.resource_id ? UUID.fromString(data.resource_id).getValue() : null,
-          data.user_id ? UUID.fromString(data.user_id).getValue() : null,
-          data.details ? JSON.stringify(data.details) : null,
-          data.ip_address,
-          data.user_agent,
-        ]
-      );
-    });
+    await this._logModel.create({
+      id: logId.getValue(),
+      action: data.action,
+      resource_type: data.resource_type,
+      resource_id: data.resource_id ? UUID.fromString(data.resource_id).getValue() : null,
+      user_id: data.user_id ? UUID.fromString(data.user_id).getValue() : null,
+      details: data.details ? JSON.stringify(data.details) as any : null,
+      ip_address: data.ip_address,
+      user_agent: data.user_agent,
+    })
   }
 
   async findAll() {
-    const logs = await this.db.runInTransaction(async (client) => {
-      const result = await client.query<Log>(`
-        SELECT 
-          id,
-          action,
-          resource_type,
-          resource_id,
-          user_id,
-          details,
-          ip_address,
-          user_agent,
-          created_at
-        FROM logs
-        ORDER BY created_at DESC LIMIT 25
-      `);
-
-      return result.rows;
+    const logs = await this._logModel.findAll({
+      order: {
+        created_at: 'DESC',
+      },
+      limit: 25,
     });
-
     return logs;
   }
 }

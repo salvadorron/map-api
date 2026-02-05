@@ -12,14 +12,16 @@ export class AuthService {
   ) {}
 
   async login(loginDto: LoginDto): Promise<AuthResponseDto> {
-    // Buscar usuario por username o email
     const user = await this.findUser(loginDto.username);
 
     if (!user) {
       throw new UnauthorizedException('Credenciales inválidas');
     }
 
-    // Verificar contraseña
+    if (!user.password) {
+      throw new UnauthorizedException('Credenciales inválidas');
+    }
+
     const isPasswordValid = await this.usersService.comparePassword(
       loginDto.password,
       user.password,
@@ -29,7 +31,6 @@ export class AuthService {
       throw new UnauthorizedException('Credenciales inválidas');
     }
 
-    // Generar token JWT
     const payload = {
       sub: user.id,
       username: user.username,
@@ -40,7 +41,6 @@ export class AuthService {
 
     const access_token = this.jwtService.sign(payload);
 
-    // Retornar respuesta sin contraseña
     return {
       access_token,
       user: {

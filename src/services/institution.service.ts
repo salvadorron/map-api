@@ -1,42 +1,39 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { Model } from 'src/database/model.config';
 import { PgService } from 'src/database/pg-config.service';
 import { CreateInstitutionDto } from 'src/dto/create-institution.dto';
 import { UpdateInstitutionDto } from 'src/dto/update-institution.dto';
 import { Institution } from 'src/entities/institution.entity';
 import { UUID } from 'src/helpers/uuid';
+import { InstitutionModel } from 'src/models/institution.model';
 
 @Injectable()
 export class InstitutionService {
-  constructor(readonly db: PgService) {}
+  private _institutionModel: InstitutionModel;
+
+  constructor(private readonly db: PgService) {
+    this._institutionModel = new InstitutionModel(this.db);
+  }
 
   async create(createInstitutionDto: CreateInstitutionDto) {
     const institutionId = UUID.create();
-    const institution = await this.db.runInTransaction(async (client) => {
-      const result = await client.query<Institution>(
-        'INSERT INTO public.institutions (id, code, name, created_at, updated_at) VALUES($1, $2, $3, $4, $5) RETURNING *',
-        [institutionId.getValue(), createInstitutionDto.code, createInstitutionDto.name, new Date(), new Date()]
-      );
-      return result.rows[0];
+    const institution = await this._institutionModel.create({
+      id: institutionId.getValue(),
+      code: createInstitutionDto.code,
+      name: createInstitutionDto.name
     });
     return institution;
   }
 
   async findAll() {
-    const institutions = await this.db.runInTransaction(async (client) => {
-      const result = await client.query<Institution>('SELECT * FROM public.institutions ORDER BY name');
-      return result.rows;
-    });
-    return institutions;
+    const institutions = await this._institutionModel.findAll();
+    return institutions.sort((a, b) => a.name.localeCompare(b.name));
   }
 
   async findOne(id: string) {
     const institutionId = UUID.fromString(id);
-    const institution = await this.db.runInTransaction(async (client) => {
-      const result = await client.query<Institution>(
-        'SELECT * FROM public.institutions WHERE id = $1',
-        [institutionId.getValue()]
-      );
-      return result.rows[0];
+    const institution = await this._institutionModel.findOne({ 
+      where: { id: institutionId.getValue() } 
     });
     if (!institution) {
       throw new NotFoundException(`Institución con id ${id} no encontrada`);
@@ -45,63 +42,55 @@ export class InstitutionService {
   }
 
   async findByCode(code: string) {
-    const institution = await this.db.query(
-      'SELECT * FROM public.institutions WHERE code = $1',
-      [code]
-    );
-    return institution.rows[0] || null;
+    const institution = await this._institutionModel.findOne({ 
+      where: { code } 
+    });
+    return institution || null;
   }
 
   async update(id: string, updateInstitutionDto: UpdateInstitutionDto) {
     const institutionId = UUID.fromString(id);
-    const keys = Object.keys(updateInstitutionDto);
-    const values = Object.values(updateInstitutionDto);
+    const updateData: Partial<Institution> = {};
 
-    if (keys.length === 0) {
+    if (Object.keys(updateInstitutionDto).length === 0) {
       throw new BadRequestException('Debe haber al menos una propiedad para actualizar');
     }
 
-    const institution = await this.db.runInTransaction(async (client) => {
-      const updates: string[] = [];
-      const updateValues: any[] = [];
-      let paramIndex = 1;
 
-      keys.forEach(key => {
-        updates.push(`"${key}" = $${paramIndex}`);
-        updateValues.push(updateInstitutionDto[key]);
-        paramIndex++;
-      });
+    if(updateData.id){
+      updateData.id = institutionId.getValue();
+    }
+    
+    if(updateData.code) {
+      updateData.code = updateInstitutionDto.code;
+    }
 
-      updates.push(`updated_at = NOW()`);
-      updateValues.push(institutionId.getValue());
+    if(updateData.name) {
+      updateData.name = updateInstitutionDto.name;
+    }
 
-      const query = `
-        UPDATE public.institutions
-        SET ${updates.join(', ')}
-        WHERE "id" = $${paramIndex}
-        RETURNING *
-      `;
-      const result = await client.query<Institution>(query, updateValues);
-      if (result.rowCount === 0) {
-        throw new NotFoundException(`Institución con ID ${id} no encontrada.`);
-      }
-      return result.rows[0];
+    
+    const institution = await this._institutionModel.update(updateData, { 
+      where: { id: institutionId.getValue() } 
     });
+
+    if (!institution) {
+      throw new NotFoundException(`Institución con ID ${id} no encontrada.`);
+    }
+
     return institution;
   }
 
   async remove(id: string) {
     const institutionId = UUID.fromString(id);
-    const deletedInstitution = await this.db.runInTransaction(async (client) => {
-      const result = await client.query<Pick<Institution, 'id'>>(
-        'DELETE FROM public.institutions WHERE id = $1 RETURNING id',
-        [institutionId.getValue()]
-      );
-      return result.rows[0];
+    const deletedInstitution = await this._institutionModel.delete({ 
+      where: { id: institutionId.getValue() } 
     });
+
     if (!deletedInstitution) {
       throw new NotFoundException('Institución no encontrada');
     }
+
     return { message: `Institución con ID: (${deletedInstitution.id}) ha sido eliminada exitosamente!` };
   }
 }

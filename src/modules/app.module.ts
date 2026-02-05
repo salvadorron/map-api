@@ -7,8 +7,6 @@ import { FormModule } from "./form.module";
 import { FilledFormModule } from "./filled_form.module";
 import { MunicipalityModule } from "./municipality.module";
 import { ParrishModule } from "./parrish.module";
-import { AppController } from "src/controllers/app.controller";
-import { AppService } from "src/services/app.service";
 import { APP_PIPE, APP_INTERCEPTOR } from "@nestjs/core";
 import { UsersModule } from './users.module';
 import { AuthModule } from './auth.module';
@@ -20,7 +18,7 @@ import { AlsModule } from "./als.module";
 import { AuthMiddlewareModule } from "./auth-middleware.module";
 import { ModuleRef } from "@nestjs/core";
 import { LoggingInterceptor } from "src/interceptors/logging.interceptor";
-import { LogService } from "src/services/log.service";
+import { HealthModule } from "./health.module";
 
 
 @Module({
@@ -39,12 +37,12 @@ import { LogService } from "src/services/log.service";
     AuthModule,
     InstitutionModule,
     LogModule,
+    HealthModule,
     AlsModule,
     AuthMiddlewareModule,
   ],
-  controllers: [AppController],
+  controllers: [],
   providers: [
-    AppService,
     {
       provide: APP_PIPE,
       useClass: ValidationPipe

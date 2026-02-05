@@ -1,27 +1,31 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { Model } from 'src/database/model.config';
 import { PgService } from 'src/database/pg-config.service';
 import { Municipality } from 'src/entities/municipality.entity';
 import { UUID } from 'src/helpers/uuid';
+import { MunicipalityModel } from 'src/models/municipality.model';
 
 @Injectable()
 export class MunicipalityService {
+  private _municipalityModel: MunicipalityModel;
 
-  constructor(private readonly db: PgService) {}
+  constructor(private readonly db: PgService) {
+    this._municipalityModel = new MunicipalityModel(this.db);
+  }
 
   findAll() {
-    return this.db.runInTransaction(async (client) => {
-      const result = await client.query<Municipality>('SELECT * FROM public.municipalities');
-      return result.rows;
-    })
+    return this._municipalityModel.findAll({});
   }
 
   async findOne(id: string) {
     const municipalityId = UUID.fromString(id);
-    const municipality = await this.db.runInTransaction(async (client) => {
-      const result = await client.query<Municipality>('SELECT * FROM public.municipalities WHERE id = $1', [municipalityId.getValue()]);
-      if(result.rowCount === 0) throw new NotFoundException(`Municipality with ID ${id} not found.`)
-      return result.rows[0];
-    })
+    const municipality = await this._municipalityModel.findOne({ 
+      where: { id: municipalityId.getValue() } 
+    });
+
+    if (!municipality) {
+      throw new NotFoundException(`Municipality with ID ${id} not found.`);
+    }
 
     return municipality;
   }

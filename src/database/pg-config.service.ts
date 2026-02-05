@@ -3,7 +3,7 @@ import { Pool, QueryResult, PoolClient } from 'pg';
 
 @Injectable()
 export class PgService implements OnModuleInit, OnModuleDestroy {
-    private pool: Pool;
+    private _pool: Pool;
     async onModuleInit() {
         const user = process.env.DB_USER;
         const host = process.env.DB_HOST;
@@ -12,7 +12,7 @@ export class PgService implements OnModuleInit, OnModuleDestroy {
         const port = parseInt(process.env.DB_PORT ?? '5432', 10);
 
 
-        this.pool = new Pool({
+        this._pool = new Pool({
             user,
             host,
             database,
@@ -21,7 +21,7 @@ export class PgService implements OnModuleInit, OnModuleDestroy {
         })
 
         try {
-            await this.pool.query('SELECT NOW()');
+            await this._pool.query('SELECT NOW()');
             console.log('Conexión a PostgreSQL establecida correctamente. ');
 
         } catch (error) {
@@ -33,11 +33,11 @@ export class PgService implements OnModuleInit, OnModuleDestroy {
     }
 
     query(text: string, params?: any[]): Promise<QueryResult> {
-        return this.pool.query(text, params);
+        return this._pool.query(text, params);
     }
 
     async runInTransaction<T>(executeTransaction: (client: PoolClient) => Promise<T>): Promise<T> {
-        const client = await this.pool.connect();
+        const client = await this._pool.connect();
 
         try {
             await client.query('BEGIN');
@@ -58,7 +58,7 @@ export class PgService implements OnModuleInit, OnModuleDestroy {
     }
 
     async onModuleDestroy() {
-        await this.pool.end();
+        await this._pool.end();
     }
 
 }

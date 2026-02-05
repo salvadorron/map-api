@@ -1,13 +1,20 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { Model } from 'src/database/model.config';
 import { CreateUserDto } from '../dto/create-user.dto';
 import { UpdateUserDto } from '../dto/update-user.dto';
 import { PgService } from 'src/database/pg-config.service';
+import { User } from 'src/entities/user.entity';
 import { UUID } from 'src/helpers/uuid';
 import bcrypt from 'bcrypt';
+import { UserModel } from 'src/models/user.model';
 
 @Injectable()
 export class UsersService {
-  constructor(readonly db: PgService) {}
+  private _userModel: UserModel;
+
+  constructor(private readonly db: PgService) {
+    this._userModel = new UserModel(this.db);
+  }
 
   private excludePassword(user: any) {
     if (!user) return null;
@@ -17,143 +24,105 @@ export class UsersService {
 
   async create(createUserDto: CreateUserDto) {
     const hashedPassword = await this.hashPassword(createUserDto.password);
-    const user = await this.db.runInTransaction(async (client) => {
-      const result = await client.query(
-        'INSERT INTO public.users (id, fullname, email, username, password, role, institution_id) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',
-        [
-          UUID.create().getValue(),
-          createUserDto.fullname,
-          createUserDto.email,
-          createUserDto.username,
-          hashedPassword,
-          createUserDto.role,
-          createUserDto.institution_id ? UUID.fromString(createUserDto.institution_id).getValue() : null
-        ]
-      );
-      return result.rows[0];
+    const user = await this._userModel.create({
+      id: UUID.create().getValue(),
+      fullname: createUserDto.fullname,
+      email: createUserDto.email,
+      username: createUserDto.username,
+      password: hashedPassword,
+      role: createUserDto.role,
+      institution_id: createUserDto.institution_id ? UUID.fromString(createUserDto.institution_id).getValue() : null
     });
     return this.excludePassword(user);
   }
 
   async findAll() {
-    const users = await this.db.runInTransaction(async (client) => {
-      const result = await client.query('SELECT id, fullname, email, username, role, institution_id, updated_at, created_at FROM public.users');
-      return result.rows;
-    });
-    return users;
+    const users = await this._userModel.findAll({});
+    return users.map(user => this.excludePassword(user));
   }
 
   async findOne(id: string) {
-    const user = await this.db.runInTransaction(async (client) => {
-      const result = await client.query(
-        'SELECT id, fullname, email, username, role, institution_id, updated_at, created_at FROM public.users WHERE id = $1',
-        [UUID.fromString(id).getValue()]
-      );
-      return result.rows[0];
+    const userId = UUID.fromString(id);
+    const user = await this._userModel.findOne({ 
+      where: { id: userId.getValue() } 
     });
+
     if (!user) {
       throw new NotFoundException(`Usuario con id ${id} no encontrado`);
     }
-    return user;
+
+    return this.excludePassword(user);
   }
 
   async findByUsername(username: string) {
-    const user = await this.db.query(
-      'SELECT * FROM public.users WHERE username = $1',
-      [username]
-    );
-    return user.rows[0] || null;
+    const user = await this._userModel.findOne({ 
+      where: { username } 
+    });
+    return user || null;
   }
 
   async findByEmail(email: string) {
-    const user = await this.db.query(
-      'SELECT * FROM public.users WHERE email = $1',
-      [email]
-    );
-    return user.rows[0] || null;
+    const user = await this._userModel.findOne({ 
+      where: { email } 
+    });
+    return user || null;
   }
 
   async update(id: string, updateUserDto: UpdateUserDto) {
-    const userId = UUID.fromString(id).getValue();
-    
-    // Obtener el usuario actual
-    const currentUser = await this.db.query(
-      'SELECT * FROM public.users WHERE id = $1',
-      [userId]
-    );
+    const userId = UUID.fromString(id);
 
-    if (!currentUser.rows[0]) {
+    const updateData: Partial<User> = {};
+
+    if (updateUserDto.fullname) {
+      updateData.fullname = updateUserDto.fullname;
+    }
+
+    if (updateUserDto.email) {
+      updateData.email = updateUserDto.email;
+    }
+
+    if (updateUserDto.username) {
+      updateData.username = updateUserDto.username;
+    }
+
+    if (updateUserDto.password) {
+      updateData.password = await this.hashPassword(updateUserDto.password);
+    }
+
+    if (updateUserDto.role) {
+      updateData.role = updateUserDto.role;
+    }
+
+    if (updateUserDto.institution_id) {
+      updateData.institution_id = UUID.fromString(updateUserDto.institution_id).getValue() 
+    }
+
+    if (Object.keys(updateData).length === 0) {
+      throw new BadRequestException('Must be at least one property to patch');
+    }
+
+    const updatedUser = await this._userModel.update(updateData, { 
+      where: { id: userId.getValue() } 
+    });
+
+    if (!updatedUser) {
       throw new NotFoundException(`Usuario con id ${id} no encontrado`);
     }
 
-    const user = await this.db.runInTransaction(async (client) => {
-      const updates: string[] = [];
-      const values: any[] = [];
-      let paramIndex = 1;
-
-      if (updateUserDto.fullname !== undefined) {
-        updates.push(`fullname = $${paramIndex}`);
-        values.push(updateUserDto.fullname);
-        paramIndex++;
-      }
-
-      if (updateUserDto.email !== undefined) {
-        updates.push(`email = $${paramIndex}`);
-        values.push(updateUserDto.email);
-        paramIndex++;
-      }
-
-      if (updateUserDto.username !== undefined) {
-        updates.push(`username = $${paramIndex}`);
-        values.push(updateUserDto.username);
-        paramIndex++;
-      }
-
-      if (updateUserDto.password !== undefined) {
-        const hashedPassword = await this.hashPassword(updateUserDto.password);
-        updates.push(`password = $${paramIndex}`);
-        values.push(hashedPassword);
-        paramIndex++;
-      }
-
-      if (updateUserDto.role !== undefined) {
-        updates.push(`role = $${paramIndex}`);
-        values.push(updateUserDto.role);
-        paramIndex++;
-      }
-
-      if (updateUserDto.institution_id !== undefined) {
-        updates.push(`institution_id = $${paramIndex}`);
-        values.push(updateUserDto.institution_id ? UUID.fromString(updateUserDto.institution_id).getValue() : null);
-        paramIndex++;
-      }
-
-      if (updates.length === 0) {
-        return this.excludePassword(currentUser.rows[0]);
-      }
-
-      updates.push(`updated_at = NOW()`);
-      values.push(userId);
-
-      const query = `UPDATE public.users SET ${updates.join(', ')} WHERE id = $${paramIndex} RETURNING id, fullname, email, username, role, institution_id, updated_at, created_at`;
-      const result = await client.query(query, values);
-      return result.rows[0];
-    });
-    return user;
+    return this.excludePassword(updatedUser);
   }
 
   async remove(id: string) {
-    const user = await this.db.runInTransaction(async (client) => {
-      const result = await client.query(
-        'DELETE FROM public.users WHERE id = $1 RETURNING id, fullname, email, username, role, institution_id, updated_at, created_at',
-        [UUID.fromString(id).getValue()]
-      );
-      return result.rows[0];
+    const userId = UUID.fromString(id);
+    const user = await this._userModel.delete({ 
+      where: { id: userId.getValue() } 
     });
+
     if (!user) {
       throw new NotFoundException(`Usuario con id ${id} no encontrado`);
     }
-    return user;
+
+    return this.excludePassword(user);
   }
 
   async hashPassword(password: string): Promise<string> {

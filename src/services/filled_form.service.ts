@@ -6,233 +6,201 @@ import { UpdateFilledFormDto } from 'src/dto/update-filled_form.dto';
 import { FilledForm } from 'src/entities/filled_form.entity';
 import { UUID } from 'src/helpers/uuid';
 import PDFDocument from 'pdfkit';
+import { FormVersion } from 'src/entities/form_version.entity';
+import { FilledFormModel } from 'src/models/filled-form.model';
 
 @Injectable()
 export class FilledFormService {
-  constructor(private readonly db: PgService) { }
+  private filledFormModel: FilledFormModel;
+
+  constructor(private readonly db: PgService) {
+    this.filledFormModel = new FilledFormModel(this.db);
+  }
+
   async create(createFilledFormDto: CreateFilledFormDto) {
-    const { form_id, shape_id, records, title, user_id } = createFilledFormDto;
-    const recordsObject = Object.fromEntries(records.entries());
+    const records = Object.fromEntries(createFilledFormDto.records.entries());
     const filledFormId = UUID.create();
-    const userIdValue = user_id ? UUID.fromString(user_id).getValue() : null;
-    const filledForm = await this.db.runInTransaction(async (client) => {
-      const formVersionResult = await client.query<{ id: string }>(
-        'SELECT id FROM public.form_versions WHERE form_id = $1 AND is_active = TRUE ORDER BY version_number DESC LIMIT 1',
-        [form_id]
-      );
-      
-      if (formVersionResult.rowCount === 0) {
-        throw new NotFoundException(`No active version found for form with ID ${form_id}`)
-      }
-      
-      const formVersionId = formVersionResult.rows[0].id;
-      
-      const result = await client.query<FilledForm>(
-        'INSERT INTO public.filled_forms (id, form_version_id, shape_id, records, title, user_id, created_at, updated_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *',
-        [filledFormId.getValue(), formVersionId, shape_id, recordsObject, title, userIdValue, new Date(), new Date()]
-      );
-      
-      // Obtener el form_id para incluirlo en la respuesta
-      const formIdResult = await client.query<{ form_id: string }>(
-        'SELECT form_id FROM public.form_versions WHERE id = $1',
-        [formVersionId]
-      );
-      
+    const userIdValue = createFilledFormDto.user_id ? UUID.fromString(createFilledFormDto.user_id).getValue() : null;
+    
+    const formVersionModel = this.filledFormModel.getFormVersionModel();
+    const formVersion = await formVersionModel.findOne({ 
+      where: { form_id: createFilledFormDto.form_id, is_active: true } 
+    });
+    
+    if (!formVersion) {
+      throw new NotFoundException(`No active version found for form with ID ${createFilledFormDto.form_id}`);
+    }
+    
+    const filledForm = await this.filledFormModel.create({ 
+      id: filledFormId.getValue(), 
+      form_version_id: formVersion.id, 
+      shape_id: createFilledFormDto.shape_id, 
+      records: records, 
+      title: createFilledFormDto.title, 
+      user_id: userIdValue 
+    });
+
+    return {
+      ...filledForm,
+      form_id: formVersion.form_id
+    };
+  }
+
+  async findAll(filters: FilledFormFilters = {}) {
+    const where: Record<string, string> = {};
+
+    if (filters.shape_id) {
+      where.shape_id = filters.shape_id;
+    }
+
+    const filledForms = await this.filledFormModel.findAll({ 
+      where, 
+      include: ['formVersion'] 
+    }) as unknown as (FilledForm & { formVersion: FormVersion })[];
+
+    return filledForms.map(filledForm => {
+      const { formVersion, ...rest } = filledForm;
       return {
-        ...result.rows[0],
-        form_id: formIdResult.rows[0]?.form_id || form_id
+        ...rest,
+        form_id: formVersion?.form_id
       };
-    })
-    return filledForm;
+    });
   }
 
-  findAll(filters: FilledFormFilters = {}) {
-    const { query, values } = this.buildQuery(filters);
-    return this.db.runInTransaction(async (client) => {
-      // Modificar la query para incluir form_id mediante JOIN
-      let modifiedQuery: string;
-      if (query.includes('WHERE')) {
-        modifiedQuery = query.replace(
-          'SELECT * FROM public.filled_forms WHERE',
-          `SELECT ff.*, fv.form_id 
-           FROM public.filled_forms ff 
-           INNER JOIN public.form_versions fv ON ff.form_version_id = fv.id 
-           WHERE`
-        );
-      } else {
-        modifiedQuery = query.replace(
-          'SELECT * FROM public.filled_forms',
-          `SELECT ff.*, fv.form_id 
-           FROM public.filled_forms ff 
-           INNER JOIN public.form_versions fv ON ff.form_version_id = fv.id`
-        );
-      }
-      
-      const result = await client.query<FilledForm & { form_id: string }>(modifiedQuery, values);
-      return result.rows;
-    })
-  }
-
-  findOne(id: string) {
+  async findOne(id: string) {
     const filledFormId = UUID.fromString(id);
-    return this.db.runInTransaction(async (client) => {
-      const result = await client.query<FilledForm>('SELECT * FROM public.filled_forms WHERE id = $1', [filledFormId.getValue()]);
-      if (result.rowCount === 0) throw new NotFoundException(`Filled form with ID ${id} not found.`)
-      return result.rows[0];
-    })
+    const filledForm = await this.filledFormModel.findOne({ 
+      where: { id: filledFormId.getValue() } 
+    });
+    
+    if (!filledForm) {
+      throw new NotFoundException(`Filled form with ID ${id} not found.`);
+    }
+    
+    return filledForm;
   }
 
   async update(id: string, updateFilledFormDto: UpdateFilledFormDto) {
     const filledFormId = UUID.fromString(id);
-    const { user_id, records, form_version_id, ...otherFields } = updateFilledFormDto;
-    const keys = Object.keys(otherFields);
 
-    // Filtrar campos que no existen en la tabla (como form_id que ahora es form_version_id)
-    const validKeys = keys.filter(key => {
-      // Excluir form_id y form_version_id ya que se manejarán por separado
-      return key !== 'form_id' && key !== 'form_version_id';
-    });
+    const updateData: Partial<FilledForm> = {};
 
-    if (validKeys.length === 0 && user_id === undefined && records === undefined && form_version_id === undefined) {
+    if(updateFilledFormDto.records){
+      updateData.records = Object.fromEntries(updateFilledFormDto.records.entries());
+    }
+
+    if(updateFilledFormDto.shape_id){
+      updateData.shape_id = updateFilledFormDto.shape_id;
+    }
+
+    if(updateFilledFormDto.title) {
+      updateData.title = updateFilledFormDto.title;
+    }
+
+    if(updateFilledFormDto.user_id){
+      updateData.user_id = UUID.fromString(updateFilledFormDto.user_id).getValue();
+    }
+
+    if(Object.keys(updateData).length === 0) {
       throw new BadRequestException('Must be at least one property to patch');
     }
 
-    const filledForm = await this.db.runInTransaction(async (client) => {
-      const updates: string[] = [];
-      const updateValues: any[] = [];
-      let paramIndex = 1;
-
-      // Manejar form_version_id: si se envía form_version_id, actualizar directamente
-      if (form_version_id !== undefined) {
-        // Validar que la versión del formulario existe
-        const formVersionResult = await client.query<{ id: string }>(
-          'SELECT id FROM public.form_versions WHERE id = $1',
-          [form_version_id]
-        );
-        
-        if (formVersionResult.rowCount === 0) {
-          throw new NotFoundException(`Form version with ID ${form_version_id} not found`)
-        }
-        
-        updates.push(`form_version_id = $${paramIndex}`);
-        updateValues.push(form_version_id);
-        paramIndex++;
+    
+    const formVersionModel = this.filledFormModel.getFormVersionModel();
+    if (updateFilledFormDto.form_version_id) {
+      const formVersion = await formVersionModel.findOne({ where: { id: updateFilledFormDto.form_version_id } });
+      if (!formVersion) {
+        throw new NotFoundException(`Form version with ID ${updateFilledFormDto.form_version_id} not found`);
       }
+    }
 
-      // Manejar campos normales válidos
-      validKeys.forEach(key => {
-        updates.push(`"${key}" = $${paramIndex}`);
-        updateValues.push(otherFields[key]);
-        paramIndex++;
-      });
+    console.log('Entro');
 
-      if (records !== undefined) {
-        updates.push(`records = $${paramIndex}`);
-        const recordsObject = records instanceof Map ? Object.fromEntries(records.entries()) : records;
-        updateValues.push(recordsObject);
-        paramIndex++;
-      }
+    const filledForm = await this.filledFormModel.update(updateData, { 
+      where: { id: filledFormId.getValue() } 
+    });
 
-      if (user_id !== undefined) {
-        updates.push(`user_id = $${paramIndex}`);
-        updateValues.push(user_id ? UUID.fromString(user_id).getValue() : null);
-        paramIndex++;
-      }
+    if (!filledForm) {
+      throw new NotFoundException(`Filled form with ID ${id} not found.`);
+    }
 
-      updates.push(`updated_at = NOW()`);
-      updateValues.push(filledFormId.getValue());
+    const formVersion = await formVersionModel.findOne({ 
+      where: { id: filledForm.form_version_id } 
+    });
 
-      const query = `
-        UPDATE public.filled_forms
-        SET ${updates.join(', ')}
-        WHERE id = $${paramIndex}
-        RETURNING *
-      `;
-      const result = await client.query<FilledForm>(query, updateValues);
-      if (result.rowCount === 0) throw new NotFoundException(`Filled form with ID ${id} not found.`)
-      
-      const formIdResult = await client.query<{ form_id: string }>(
-        'SELECT form_id FROM public.form_versions WHERE id = $1',
-        [result.rows[0].form_version_id]
-      );
-      
-      return {
-        ...result.rows[0],
-        form_id: formIdResult.rows[0]?.form_id
-      };
-    })
-    return filledForm;
+    return {
+      ...filledForm,
+      form_id: formVersion?.form_id
+    };
   }
 
   async updateToLatestVersion(id: string) {
     const filledFormId = UUID.fromString(id);
-    const filledForm = await this.db.runInTransaction(async (client) => {
-      const filledFormResult = await client.query<FilledForm>(
-        'SELECT * FROM public.filled_forms WHERE id = $1',
-        [filledFormId.getValue()]
-      );
-      
-      if (filledFormResult.rowCount === 0) {
-        throw new NotFoundException(`Filled form with ID ${id} not found.`)
-      }
-      
-      const currentFilledForm = filledFormResult.rows[0];
-      
-      // Obtener el form_id desde la versión actual del formulario
-      const formIdResult = await client.query<{ form_id: string }>(
-        'SELECT form_id FROM public.form_versions WHERE id = $1',
-        [currentFilledForm.form_version_id]
-      );
-      
-      if (formIdResult.rowCount === 0) {
-        throw new NotFoundException(`Form version with ID ${currentFilledForm.form_version_id} not found.`)
-      }
-      
-      const formId = formIdResult.rows[0].form_id;
-      
-      const latestVersionResult = await client.query<{ id: string }>(
-        'SELECT id FROM public.form_versions WHERE form_id = $1 AND is_active = TRUE ORDER BY version_number DESC LIMIT 1',
-        [formId]
-      );
-      
-      if (latestVersionResult.rowCount === 0) {
-        throw new NotFoundException(`No active version found for form with ID ${formId}`)
-      }
-      
-      const latestVersionId = latestVersionResult.rows[0].id;
-      
-      // Si ya está en la versión más reciente, retornar sin cambios
-      if (currentFilledForm.form_version_id === latestVersionId) {
-        return {
-          ...currentFilledForm,
-          form_id: formId,
-          message: 'Filled form is already using the latest version'
-        };
-      }
-      
-      const updateResult = await client.query<FilledForm>(
-        `UPDATE public.filled_forms 
-         SET form_version_id = $1, updated_at = NOW() 
-         WHERE id = $2 
-         RETURNING *`,
-        [latestVersionId, filledFormId.getValue()]
-      );
-      
+    const formVersionModel = this.filledFormModel.getFormVersionModel();
+    
+    const currentFilledForm = await this.filledFormModel.findOne({ 
+      where: { id: filledFormId.getValue() } 
+    });
+
+    if (!currentFilledForm) {
+      throw new NotFoundException(`Filled form with ID ${id} not found.`);
+    }
+
+    const currentFormVersion = await formVersionModel.findOne({ 
+      where: { id: currentFilledForm.form_version_id } 
+    });
+
+    if (!currentFormVersion) {
+      throw new NotFoundException(`Form version with ID ${currentFilledForm.form_version_id} not found.`);
+    }
+
+    const formId = currentFormVersion.form_id;
+
+    const activeVersions = await formVersionModel.findAll({ 
+      where: { form_id: formId, is_active: true },
+      order: { version_number: 'DESC' },
+      limit: 1
+    });
+
+    if (activeVersions.length === 0) {
+      throw new NotFoundException(`No active version found for form with ID ${formId}`);
+    }
+
+    const latestVersion = activeVersions[0];
+
+    if (currentFilledForm.form_version_id === latestVersion.id) {
       return {
-        ...updateResult.rows[0],
-        form_id: formId
+        ...currentFilledForm,
+        form_id: formId,
+        message: 'Filled form is already using the latest version'
       };
-    })
-    return filledForm;
+    }
+
+    const updatedFilledForm = await this.filledFormModel.update(
+      { form_version_id: latestVersion.id },
+      { where: { id: filledFormId.getValue() } }
+    );
+
+    if (!updatedFilledForm) {
+      throw new NotFoundException(`Filled form with ID ${id} not found.`);
+    }
+
+    return {
+      ...updatedFilledForm,
+      form_id: formId
+    };
   }
 
   async remove(id: string) {
     const filledFormId = UUID.fromString(id);
-    const filledForm = await this.db.runInTransaction(async (client) => {
-      const result = await client.query<Pick<FilledForm, 'id'>>('DELETE FROM public.filled_forms WHERE id = $1 RETURNING id', [filledFormId.getValue()]);
-      if (result.rowCount === 0) throw new NotFoundException(`Filled form with ID ${id} not found.`)
-      return result.rows[0];
-    })
+    const filledForm = await this.filledFormModel.delete({ 
+      where: { id: filledFormId.getValue() } 
+    });
+    
+    if (!filledForm) {
+      throw new NotFoundException(`Filled form with ID ${id} not found.`);
+    }
+    
     return { message: `Filled form with ID: (${filledForm.id}) has deleted successfully!` };
   }
 
@@ -282,26 +250,26 @@ export class FilledFormService {
     if (value === null || value === undefined) {
       return 'N/A';
     }
-    
+
     if (typeof value === 'boolean') {
       return value ? 'Sí' : 'No';
     }
-    
+
     if (typeof value === 'number') {
       return value.toString();
     }
-    
+
     if (typeof value === 'string') {
       return value.length > maxLength ? value.substring(0, maxLength) + '...' : value;
     }
-    
+
     if (Array.isArray(value)) {
       if (value.length === 0) return '[]';
       const items = value.slice(0, 3).map(item => this.formatRecordValue(item, 30));
       const more = value.length > 3 ? ` y ${value.length - 3} más` : '';
       return `[${items.join(', ')}${more}]`;
     }
-    
+
     if (typeof value === 'object') {
       const keys = Object.keys(value);
       if (keys.length === 0) return '{}';
@@ -309,7 +277,7 @@ export class FilledFormService {
       const more = keys.length > 2 ? ` y ${keys.length - 2} más` : '';
       return `{${items.join(', ')}${more}}`;
     }
-    
+
     return String(value);
   }
 
@@ -324,22 +292,22 @@ export class FilledFormService {
 
   async generatePDFReport(): Promise<Buffer> {
     const data = await this.getReportDataByMunicipalityAndParrish();
-    
+
     // Organizar datos por municipio y parroquia
     const organizedData: Record<string, Record<string, any[]>> = {};
-    
+
     data.forEach((row: any) => {
       const municipalityKey = row.municipality_name || row.cod_mun || 'Sin Municipio';
       const parrishKey = row.parrish_name || 'Sin Parroquia';
-      
+
       if (!organizedData[municipalityKey]) {
         organizedData[municipalityKey] = {};
       }
-      
+
       if (!organizedData[municipalityKey][parrishKey]) {
         organizedData[municipalityKey][parrishKey] = [];
       }
-      
+
       organizedData[municipalityKey][parrishKey].push(row);
     });
 
@@ -367,7 +335,7 @@ export class FilledFormService {
         // Iterar por parroquias
         Object.keys(organizedData[municipality]).forEach((parrish, parIndex) => {
           const forms = organizedData[municipality][parrish];
-          
+
           // Título de la parroquia
           doc.fontSize(14).fillColor('#333333').text(`Parroquia: ${parrish}`, { indent: 20 });
           doc.moveDown(0.3);
@@ -380,17 +348,17 @@ export class FilledFormService {
             }
 
             doc.fontSize(11).fillColor('#000000');
-            doc.text(new Date(form.filled_form_created_at).toLocaleDateString('es-ES', { 
-              year: 'numeric', 
-              month: 'long', 
+            doc.text(new Date(form.filled_form_created_at).toLocaleDateString('es-ES', {
+              year: 'numeric',
+              month: 'long',
               day: 'numeric',
               hour: '2-digit',
               minute: '2-digit'
-            }), { 
+            }), {
               indent: 40,
-              continued: false 
+              continued: false
             });
-            
+
             // Mostrar records como Label: Value (cada input es una entrada)
             if (form.records && typeof form.records === 'object') {
               const records = form.records as Record<
@@ -433,9 +401,9 @@ export class FilledFormService {
                   labelValueEntries.length > 0
                     ? labelValueEntries
                     : recordKeys.map((key) => ({
-                        label: this.formatFieldName(key),
-                        value: records[key],
-                      }));
+                      label: this.formatFieldName(key),
+                      value: records[key],
+                    }));
 
                 fallbackEntries.forEach((entry) => {
                   const formattedLabel = entry.label;
@@ -464,9 +432,9 @@ export class FilledFormService {
                 });
               }
             }
-            
+
             doc.moveDown(0.5);
-            
+
             // Línea separadora
             doc.moveTo(50, doc.y).lineTo(545, doc.y).strokeColor('#cccccc').lineWidth(0.5).stroke();
             doc.moveDown(0.5);
@@ -476,7 +444,7 @@ export class FilledFormService {
         });
 
         doc.moveDown(1);
-        
+
         // Agregar nueva página si no es el último municipio
         if (munIndex < Object.keys(organizedData).length - 1) {
           doc.addPage();
@@ -494,10 +462,4 @@ export class FilledFormService {
     });
   }
 
-  private buildQuery(filters: FilledFormFilters = {}) {
-    if (filters.shape_id) {
-      return { query: 'SELECT * FROM public.filled_forms WHERE shape_id = $1', values: [filters.shape_id] }
-    }
-    return { query: 'SELECT * FROM public.filled_forms', values: undefined }
-  }
 }
