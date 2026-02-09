@@ -103,6 +103,18 @@ export abstract class BaseModel<T> {
         return this.model.delete(options);
     }
 
+    async findAndCountAll(options?: {
+        where?: any;
+        include?: string[] | Array<{ relation: string; where?: any; order?: any; limit?: number }>;
+        order?: any;
+        limit?: number;
+        offset?: number;
+        whereRelation?: any; // Para filtrar por relaciones (many-to-many)
+    }) {
+        this.ensureRelationsInitialized();
+        return this.model.findAndCountAll(options);
+    }
+
     /**
      * Acceso directo al modelo subyacente si se necesita
      */

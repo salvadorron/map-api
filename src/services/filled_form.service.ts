@@ -205,6 +205,127 @@ export class FilledFormService {
   }
 
 
+  /**
+   * Full-text search on filled forms.
+   * Searches in `title` and all `records` values.
+   * Returns objects with `id`, `title`, `shape_id` and optional `snippet`.
+   */
+  async search(q: string, page = 1, limit = 50) {
+    const queryText = (q || '').trim();
+
+    if (!queryText) {
+      throw new BadRequestException('Query parameter q is required');
+    }
+
+    const maxQLen = 200;
+    const safeQ = queryText.substring(0, maxQLen);
+
+    const perPage = Math.min(limit && Number(limit) ? Number(limit) : 50, 50);
+    const pageNum = Math.max(1, Number(page) || 1);
+    const offset = (pageNum - 1) * perPage;
+
+    // Detect if pg_trgm is available; if not use a safe fallback using ILIKE
+    const extRes = await this.db.query("SELECT COUNT(1) AS cnt FROM pg_extension WHERE extname = 'pg_trgm'");
+    const hasTrgm = !!(extRes && extRes.rows && extRes.rows[0] && Number(extRes.rows[0].cnt) > 0);
+
+    // Use plainto_tsquery + pg_trgm similarity for fuzzy matching when available.
+    // The query computes a combined text of title + records and ranks by the greater
+    // of trigram similarity and tsvector rank. If `pg_trgm` is not installed,
+    // fall back to full-text + ILIKE matching.
+    const sql = hasTrgm ? `
+      WITH ff_expanded AS (
+        SELECT ff.*, (SELECT string_agg(value, ' ') FROM jsonb_each_text(ff.records)) AS records_text
+        FROM public.filled_forms ff
+      )
+      SELECT
+        fe.id,
+        fe.title,
+        fe.shape_id,
+        COALESCE(s.properties->>'description', '') AS shape_name,
+        COALESCE(m.name, s.properties->>'cod_mun', '') AS municipality_name,
+        COALESCE(p.name, '') AS parrish_name,
+        ts_headline(
+          'simple',
+          COALESCE(fe.title, '') || ' ' || COALESCE(fe.records_text, ''),
+          plainto_tsquery('simple', $1),
+          'MaxFragments=2, MinWords=2'
+        ) AS snippet,
+        GREATEST(
+          COALESCE(similarity(COALESCE(fe.title, '') || ' ' || COALESCE(fe.records_text, ''), $1), 0),
+          COALESCE(
+            ts_rank(
+              to_tsvector('simple', COALESCE(fe.title, '') || ' ' || COALESCE(fe.records_text, '')),
+              plainto_tsquery('simple', $1)
+            ),
+            0
+          )
+        ) AS score
+      FROM ff_expanded fe
+      LEFT JOIN public.shapes s ON fe.shape_id = s.id
+      LEFT JOIN public.municipalities m ON (
+        s.properties->>'cod_mun' = m.short_name
+        OR s.properties->>'cod_mun' = m.id::text
+        OR s.properties->>'cod_mun' = m.name
+      )
+      LEFT JOIN public.parrishes p ON ((s.properties->>'cod_prq')::uuid = p.id)
+      WHERE (
+        to_tsvector('simple', COALESCE(fe.title, '') || ' ' || COALESCE(fe.records_text, '')) @@ plainto_tsquery('simple', $1)
+        OR similarity(COALESCE(fe.title, '') || ' ' || COALESCE(fe.records_text, ''), $1) > 0.15
+      )
+      ORDER BY score DESC
+      LIMIT $2 OFFSET $3
+    ` : `
+      WITH ff_expanded AS (
+        SELECT ff.*, (SELECT string_agg(value, ' ') FROM jsonb_each_text(ff.records)) AS records_text
+        FROM public.filled_forms ff
+      )
+      SELECT
+        fe.id,
+        fe.title,
+        fe.shape_id,
+        COALESCE(s.properties->>'description', '') AS shape_name,
+        COALESCE(m.name, s.properties->>'cod_mun', '') AS municipality_name,
+        COALESCE(p.name, '') AS parrish_name,
+        ts_headline(
+          'simple',
+          COALESCE(fe.title, '') || ' ' || COALESCE(fe.records_text, ''),
+          plainto_tsquery('simple', $1),
+          'MaxFragments=2, MinWords=2'
+        ) AS snippet,
+        ts_rank(
+          to_tsvector('simple', COALESCE(fe.title, '') || ' ' || COALESCE(fe.records_text, '')),
+          plainto_tsquery('simple', $1)
+        ) AS score
+      FROM ff_expanded fe
+      LEFT JOIN public.shapes s ON fe.shape_id = s.id
+      LEFT JOIN public.municipalities m ON (
+        s.properties->>'cod_mun' = m.short_name
+        OR s.properties->>'cod_mun' = m.id::text
+        OR s.properties->>'cod_mun' = m.name
+      )
+      LEFT JOIN public.parrishes p ON ((s.properties->>'cod_prq')::uuid = p.id)
+      WHERE (
+        to_tsvector('simple', COALESCE(fe.title, '') || ' ' || COALESCE(fe.records_text, '')) @@ plainto_tsquery('simple', $1)
+        OR (COALESCE(fe.title, '') || ' ' || COALESCE(fe.records_text, '')) ILIKE ('%' || $1 || '%')
+      )
+      ORDER BY score DESC
+      LIMIT $2 OFFSET $3
+    `;
+
+    const result = await this.db.query(sql, [safeQ, perPage, offset]);
+
+    return result.rows.map((r: any) => ({
+      id: r.id,
+      title: r.title,
+      shape_id: r.shape_id,
+      shape_name: r.shape_name,
+      municipality_name: r.municipality_name,
+      parrish_name: r.parrish_name,
+      snippet: r.snippet
+    }));
+  }
+
+
 
   async getReportDataByMunicipalityAndParrish() {
     return this.db.runInTransaction(async (client) => {

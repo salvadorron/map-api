@@ -23,7 +23,7 @@ export class LoggingInterceptor implements NestInterceptor {
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     const request = context.switchToHttp().getRequest<Request>();
-    const { method, url, body, params, query, ip, headers } = request;
+    const { method, url, body, params, ip, headers } = request;
 
 
     // Excluir el endpoint de logs para evitar registros recursivos
@@ -35,9 +35,10 @@ export class LoggingInterceptor implements NestInterceptor {
     const store = this.als.getStore();
     const userId = store?.userId || null;
 
-    // Solo registrar logs si hay un usuario autenticado
-    // Los accesos públicos (sin usuario logueado) no se registran
-    if (!userId) {
+    // Permitir registrar intentos de login (POST /auth/login) aunque no exista userId aún
+    const isAuthLogin = url.startsWith('/auth/login');
+    // Solo registrar logs si hay un usuario autenticado, excepto para login
+    if (!userId && !isAuthLogin) {
       return next.handle();
     }
 
@@ -46,6 +47,12 @@ export class LoggingInterceptor implements NestInterceptor {
     
     // Determinar la acción basada en el método HTTP
     const action = this.getActionFromMethod(method);
+
+    // Omitir logs de operaciones de solo lectura para ahorrar espacio
+    // Solo registrar: Creación, Actualización, Eliminación y acciones de auth (p. ej. inicio de sesión)
+    if (action === 'view') {
+      return next.handle();
+    }
     
     // Obtener el ID del recurso si existe
     const resourceId = params?.id || body?.id || null;
@@ -56,13 +63,8 @@ export class LoggingInterceptor implements NestInterceptor {
     const ipAddress = this.normalizeIpAddress(ip, forwardedFor, realIp);
     const userAgent = typeof headers['user-agent'] === 'string' ? headers['user-agent'] : null;
 
-    // Preparar detalles adicionales
-    const details: Record<string, any> = {
-      method,
-      url,
-      ...(query && Object.keys(query).length > 0 && { query }),
-      ...(body && Object.keys(body).length > 0 && { body: this.sanitizeBody(body) }),
-    };
+    // No almacenamos payloads completos para evitar llenar el storage.
+    // Guardamos solo metadatos mínimos en la tabla de logs.
 
     // Obtener LogService de forma lazy para asegurar que esté inicializado
     if (!this.logService) {
@@ -78,37 +80,44 @@ export class LoggingInterceptor implements NestInterceptor {
     // Ejecutar la operación y registrar el log después
     return next.handle().pipe(
       tap({
-        next: async () => {
+        next: async (res) => {
           try {
             if (!this.logService) return;
+
+            let actionResource = action;
+            if (action === 'create' && resourceType === 'auth') {
+              actionResource = 'login';
+            }
+
+            // Si es login, tratar de extraer el user desde la respuesta
+            const logUserId = isAuthLogin ? (res?.user?.id || userId) : userId;
+            // No guardar `details` para login (confidencial)
+            const logDetails = isAuthLogin ? null : body;
+
             await this.logService.create({
-              action,
+              action: actionResource,
               resource_type: resourceType,
               resource_id: resourceId,
-              user_id: userId,
-              details,
+              user_id: logUserId,
+              details: logDetails as any,
               ip_address: ipAddress,
               user_agent: userAgent,
             });
           } catch (error) {
-            // No fallar la operación principal si el log falla
             console.error('Error al registrar log:', error);
           }
         },
-        error: async (error) => {
+        error: async (err) => {
           try {
             if (!this.logService) return;
-            // Registrar también los errores
+            // No guardar `details` para login errors
+            const errorDetails: any = isAuthLogin ? null : { error: err?.message };
             await this.logService.create({
               action: `${action}_ERROR`,
               resource_type: resourceType,
               resource_id: resourceId,
               user_id: userId,
-              details: {
-                ...details,
-                error: error.message,
-                error_name: error.name,
-              },
+              details: errorDetails,
               ip_address: ipAddress,
               user_agent: userAgent,
             });
@@ -131,11 +140,11 @@ export class LoggingInterceptor implements NestInterceptor {
 
   private getActionFromMethod(method: string): string {
     const methodMap: Record<string, string> = {
-      GET: 'Lectura',
-      POST: 'Creación',
-      PATCH: 'Actualización',
-      PUT: 'Actualización',
-      DELETE: 'Eliminación',
+      GET: 'view',
+      POST: 'create',
+      PATCH: 'update',
+      PUT: 'update',
+      DELETE: 'delete',
     };
     return methodMap[method.toUpperCase()] || method.toUpperCase();
   }

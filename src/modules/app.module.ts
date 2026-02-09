@@ -17,6 +17,7 @@ import { AuthMiddleware } from "src/middlewares/auth.middleware";
 import { AlsModule } from "./als.module";
 import { AuthMiddlewareModule } from "./auth-middleware.module";
 import { ModuleRef } from "@nestjs/core";
+import { ReportsModule } from './reports.module';
 import { LoggingInterceptor } from "src/interceptors/logging.interceptor";
 import { HealthModule } from "./health.module";
 
@@ -40,6 +41,7 @@ import { HealthModule } from "./health.module";
     HealthModule,
     AlsModule,
     AuthMiddlewareModule,
+    ReportsModule,
   ],
   controllers: [],
   providers: [

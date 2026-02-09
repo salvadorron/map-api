@@ -7,5 +7,6 @@ import { AlsModule } from './als.module';
   imports: [AlsModule],
   controllers: [CategoryController],
   providers: [CategoryService],
+  exports: [CategoryService],
 })
 export class CategoryModule {}

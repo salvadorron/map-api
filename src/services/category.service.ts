@@ -26,7 +26,7 @@ export class CategoryService {
       payload.parent_id = UUID.fromString(createCategoryDto.parent_id).getValue();
     }
 
-    if(createCategoryDto.element_type) {
+    if (createCategoryDto.element_type) {
       payload.element_type = createCategoryDto.element_type;
     }
 
@@ -49,26 +49,57 @@ export class CategoryService {
     return category;
   }
 
-  async findAll(filters: CategoryFilters = { is_public: 'false' }) {
+async findAll(filters: CategoryFilters = { is_public: 'false', page: 1, limit: 10 }) {
+  const store = this.als.getStore();
 
-    const store = this.als.getStore();
+  const where: Record<string, any> = {};
+  const options: any = { where };
 
-    const where: Record<string, any> = {};
-    const options: any = { where };
+  // // Filtrar por institution_id usando whereRelation (relación many-to-many)
+  // if (store?.institutionId && filters.is_public === 'false') {
+  //   where.whereRelation = {
+  //     institution_category_assignments: {
+  //       institution_id: store.institutionId
+  //     }
+  //   };
+  // }
 
-    // Filtrar por institution_id usando whereRelation (relación many-to-many)
-    if(store?.institutionId && filters.is_public === 'false') {
-      where.institution_id = store.institutionId;
-    }
-
-    if(filters.parent_ids) {
-      where.parent_id = { in: filters.parent_ids.split(',') };
-    }
-
-    const categories = await this._categoryModel.findAll(options);
-    console.log('categories', categories);
-    return categories;
+  if (filters.parent_ids) {
+    where.parent_id = { in: filters.parent_ids.split(',') };
   }
+
+  // Filtro por nombre exacto si se provee
+  if (filters.name && filters.name !== '') {
+    where.name = filters.name;
+  }
+
+  // Búsqueda parcial en nombre (case-insensitive) cuando no hay filtro exacto
+  else if (filters.searchTerm && filters.searchTerm !== '') {
+    where.name = { ilike: `%${filters.searchTerm}%` };
+  }
+
+  const page = Number(filters.page) || 1;
+  const limit = Number(filters.limit) || 10;
+  const offset = (page - 1) * limit;
+
+  const result = await this._categoryModel.findAndCountAll({ ...options, limit, offset });
+
+  const total = result.count || 0;
+  const totalPages = limit > 0 ? Math.ceil(total / limit) : 1;
+  const hasNext = page < totalPages;
+  const hasPrevious = page > 1;
+
+  return {
+    data: result.rows,
+    metadata: {
+      page,
+      totalPages,
+      hasNext,
+      hasPrevious,
+      total
+    }
+  };
+}
 
   async findOne(id: string) {
     const categoryId = UUID.fromString(id);
@@ -81,9 +112,8 @@ export class CategoryService {
     const categoryId = UUID.fromString(id);
     const payload: Partial<Category> = {};
 
-    if (updateCategoryDto.parent_id) {
-      payload.parent_id = UUID.fromString(updateCategoryDto.parent_id).getValue();
-    }
+    payload.parent_id = updateCategoryDto.parent_id;
+
 
     if (updateCategoryDto.element_type) {
       payload.element_type = updateCategoryDto.element_type;
@@ -97,13 +127,14 @@ export class CategoryService {
       payload.icon = updateCategoryDto.icon;
     }
 
-    if(updateCategoryDto.name) {
+    if (updateCategoryDto.name) {
       payload.name = updateCategoryDto.name;
     }
 
-    if(Object.keys(payload).length === 0) {
+    if (Object.keys(payload).length === 0) {
       throw new BadRequestException('Must be at least one property to patch');
     }
+
 
     const category = await this._categoryModel.update(payload, { where: { id: categoryId.getValue() } });
     if (!category) throw new NotFoundException(`Category with ID ${categoryId.getValue()} not found.`);
@@ -115,5 +146,5 @@ export class CategoryService {
     const deletedCategory = await this._categoryModel.delete({ where: { id: categoryId.getValue() } });
     if (!deletedCategory) throw new NotFoundException('Category not found');
     return { message: `Category with ID: (${deletedCategory.id}) has deleted successfully!` };
-  } 
+  }
 }

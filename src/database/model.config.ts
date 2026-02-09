@@ -1,6 +1,6 @@
 import { PgService } from "./pg-config.service";
 
-export type WhereValue<V> = V | { in?: V[] } | { like?: string };
+export type WhereValue<V> = V | { in?: V[] } | { like?: string } | { ilike?: string };
 
 // Tipos para relaciones
 type RelationType = 'belongsTo' | 'hasMany' | 'belongsToMany';
@@ -40,15 +40,17 @@ type IncludeOption<R = any> = {
         [K in keyof R]?: 'ASC' | 'DESC';
     };
     limit?: number;
+    include?: IncludeConfig[];
 };
 
-type IncludeConfig = string | { relation: string; where?: any; order?: any; limit?: number };
+type IncludeConfig = string | { relation: string; where?: any; order?: any; limit?: number; include?: IncludeConfig[] };
 
 interface QueryOptions<T> {
     where?: {
         [K in keyof T]?: WhereValue<T[K]>;
     };
     limit?: number;
+    offset?: number;
     include?: IncludeConfig[]; // nombres de relaciones o objetos con opciones
     order?: {
         [K in keyof T]?: 'ASC' | 'DESC';
@@ -120,7 +122,7 @@ export class Model<T> {
 
     async findByPk(id: string, include: IncludeConfig[] = []) {
         const query = `SELECT * FROM ${this.tableName} WHERE ${String(this.primaryKey)} = $1`;
-        
+
         const res = await this._pgService.runInTransaction<T[]>(async (client) => {
             const result = await client.query(query, [id]);
             const rows = result.rows;
@@ -192,7 +194,7 @@ export class Model<T> {
                             relationValues
                         );
                         const relatedIds = relatedResult.rows.map(row => row[relation.otherLocalKey || 'id']);
-                        
+
                         if (relatedIds.length === 0) {
                             relationFilteredIds = [];
                         } else {
@@ -234,7 +236,7 @@ export class Model<T> {
                             relationValues
                         );
                         const relatedIds = relatedResult.rows.map(row => row[relation.localKey || 'id']);
-                        
+
                         // Ahora obtener los IDs del modelo principal que tienen estos foreignKeys
                         if (relatedIds.length > 0) {
                             const mainQuery = `
@@ -263,7 +265,7 @@ export class Model<T> {
                 }
 
                 // Intersección: IDs que están en todas las listas
-                return allFilteredIds.reduce((acc, ids) => 
+                return allFilteredIds.reduce((acc, ids) =>
                     acc.filter(id => ids.includes(id))
                 );
             });
@@ -277,11 +279,11 @@ export class Model<T> {
             const validIds = relationFilteredIds
                 .filter(id => id != null && typeof id === 'string' && id.trim() !== '')
                 .map(id => String(id).trim());
-            
+
             if (validIds.length === 0) {
                 return [];
             }
-            
+
             filteredWhere = {
                 ...filteredWhere,
                 [String(this.primaryKey)]: { in: validIds }
@@ -332,12 +334,11 @@ export class Model<T> {
 
         const setClause = dataKeys.map((key, i) => `${String(key)} = $${i + 1}`).join(', ');
 
-        const { clause, values: whereValues } = this.buildWhereClause(where, dataKeys.length);
-
-        console.log({clause})
+        const { clause, values: whereValues } = this.buildWhereClause(where, dataKeys.length + 1);
 
         const query = `UPDATE ${this.tableName} SET ${setClause}${clause} RETURNING *`;
         const queryValues = [...dataValues, ...whereValues];
+
 
 
         const res = await this._pgService.runInTransaction<T[]>(async (client) => {
@@ -369,6 +370,101 @@ export class Model<T> {
         return res[0] || null;
     }
 
+    async findAndCountAll(options: QueryOptions<T> = {}) {
+        const { where = {}, include = [], order, limit, offset, whereRelation } = options;
+
+        // Procesar filtros basados en relaciones (mismo enfoque que en findAll)
+        let filteredWhere = { ...where };
+        if (whereRelation && Object.keys(whereRelation).length > 0) {
+            const relationFilteredIds = await this._pgService.runInTransaction<string[]>(async (client) => {
+                const allFilteredIds: string[][] = [];
+
+                for (const [relationName, relationWhere] of Object.entries(whereRelation)) {
+                    const relation = this.relations.get(relationName);
+                    if (!relation) continue;
+
+                    let relationFilteredIds: string[] = [];
+
+                    if (relation.type === 'belongsToMany') {
+                        const { clause: relationClause, values: relationValues } = this.buildWhereClause(relationWhere, 1);
+                        const relatedQuery = `SELECT ${relation.otherLocalKey || 'id'} FROM ${relation.model.tableName} ${relationClause}`;
+                        const relatedResult = await client.query<{ [key: string]: string }>(relatedQuery, relationValues);
+                        const relatedIds = relatedResult.rows.map(row => row[relation.otherLocalKey || 'id']);
+
+                        if (relatedIds.length > 0) {
+                            const throughQuery = `SELECT DISTINCT ${relation.foreignKey} FROM ${relation.through} WHERE ${relation.otherKey} = ANY($1::uuid[])`;
+                            const throughResult = await client.query<{ [key: string]: string }>(throughQuery, [relatedIds]);
+                            relationFilteredIds = throughResult.rows.map(row => row[relation.foreignKey]);
+                        }
+                    } else if (relation.type === 'hasMany') {
+                        const { clause: relationClause, values: relationValues } = this.buildWhereClause(relationWhere, 1);
+                        const relatedQuery = `SELECT DISTINCT ${relation.foreignKey} FROM ${relation.model.tableName} ${relationClause}`;
+                        const relatedResult = await client.query<{ [key: string]: string }>(relatedQuery, relationValues);
+                        relationFilteredIds = relatedResult.rows.map(row => row[relation.foreignKey]);
+                    } else if (relation.type === 'belongsTo') {
+                        const { clause: relationClause, values: relationValues } = this.buildWhereClause(relationWhere, 1);
+                        const relatedQuery = `SELECT ${relation.localKey || 'id'} FROM ${relation.model.tableName} ${relationClause}`;
+                        const relatedResult = await client.query<{ [key: string]: string }>(relatedQuery, relationValues);
+                        const relatedIds = relatedResult.rows.map(row => row[relation.localKey || 'id']);
+
+                        if (relatedIds.length > 0) {
+                            const mainQuery = `SELECT ${String(this.primaryKey)} FROM ${this.tableName} WHERE ${relation.foreignKey} = ANY($1::uuid[])`;
+                            const mainResult = await client.query<{ [key: string]: string }>(mainQuery, [relatedIds]);
+                            relationFilteredIds = mainResult.rows.map(row => row[String(this.primaryKey)]);
+                        }
+                    }
+
+                    allFilteredIds.push(relationFilteredIds);
+                }
+
+                if (allFilteredIds.length === 0) return [];
+                if (allFilteredIds.length === 1) return allFilteredIds[0];
+                return allFilteredIds.reduce((acc, ids) => acc.filter(id => ids.includes(id)));
+            });
+
+            if (!relationFilteredIds || relationFilteredIds.length === 0) {
+                return { rows: [], count: 0 };
+            }
+
+            const validIds = relationFilteredIds
+                .filter(id => id != null && typeof id === 'string' && id.trim() !== '')
+                .map(id => String(id).trim());
+
+            if (validIds.length === 0) {
+                return { rows: [], count: 0 };
+            }
+
+            filteredWhere = {
+                ...filteredWhere,
+                [String(this.primaryKey)]: { in: validIds }
+            };
+        }
+
+        const { clause, values } = this.buildWhereClause(filteredWhere);
+        const orderClause = this.buildOrderClause(order);
+        const limitClause = limit ? ` LIMIT ${limit}` : '';
+        const offsetClause = (typeof offset === 'number' && offset >= 0) ? ` OFFSET ${offset}` : '';
+
+        // Obtener filas
+        const rows = await this._pgService.runInTransaction<T[]>(async (client) => {
+            const result = await client.query(`SELECT * FROM ${this.tableName}${clause}${orderClause}${limitClause}${offsetClause}`, values);
+            if (include.length > 0) {
+                return await this.loadRelations(result.rows, include, client);
+            }
+            return result.rows;
+        });
+
+        // Obtener count (mismo WHERE, sin limit/offset)
+        const countRes = await this._pgService.runInTransaction<{ count: string }[]>(async (client) => {
+            const countQuery = `SELECT COUNT(*)::int AS count FROM ${this.tableName}${clause}`;
+            const r = await client.query(countQuery, values);
+            return r.rows;
+        });
+        const count = (countRes && countRes[0] && typeof countRes[0].count === 'number') ? (countRes[0].count as unknown as number) : Number(countRes[0]?.count || 0);
+
+        return { rows, count };
+    }
+
     private buildWhereClause(where: object, startingIndex: number = 0) {
         const keys = Object.keys(where);
         const conditions: string[] = [];
@@ -389,7 +485,7 @@ export class Model<T> {
             // Si el valor es un objeto y tiene la propiedad 'in'
             if (value !== null && typeof value === 'object' && 'in' in value) {
                 const inValues = value.in as any[];
-                
+
                 if (inValues.length === 0) {
                     // Si el array está vacío, usar una condición que siempre sea falsa
                     conditions.push('1 = 0');
@@ -405,22 +501,31 @@ export class Model<T> {
                             return typeof v === 'string' ? v.trim() : String(v);
                         })
                         .filter(v => v !== null && v !== '');
-                    
+
                     if (cleanedValues.length === 0) {
                         conditions.push('1 = 0');
                     } else {
                         // Verificar si todos los valores son UUIDs (strings que parecen UUIDs)
                         const allAreUUIDs = cleanedValues.every(v => typeof v === 'string' && isUUID(v));
-                        
+
                         // Si el campo es 'id' o todos los valores son UUIDs, usar uuid[]
                         // De lo contrario, usar text[]
                         const arrayType = (key === 'id' || allAreUUIDs) ? 'uuid[]' : 'text[]';
-                        
+
                         paramIndex++;
                         conditions.push(`${String(key)} = ANY($${paramIndex}::${arrayType})`);
                         values.push(cleanedValues);
                     }
                 }
+            }
+            // Manejo de LIKE / ILIKE
+            else if (value !== null && typeof value === 'object' && ('like' in value || 'ilike' in value)) {
+                const likeValue = (value as any).like ?? (value as any).ilike;
+                const isILike = (value as any).ilike !== undefined;
+                paramIndex++;
+                const op = isILike ? 'ILIKE' : 'LIKE';
+                conditions.push(`${String(key)} ${op} $${paramIndex}`);
+                values.push(likeValue);
             }
             // Caso por defecto: Igualdad (=)
             else {
@@ -483,7 +588,8 @@ export class Model<T> {
                         includeOptions = {
                             where: includeItem.where,
                             order: includeItem.order,
-                            limit: includeItem.limit
+                            limit: includeItem.limit,
+                            include: (includeItem as any).include
                         };
                     }
 
@@ -534,8 +640,8 @@ export class Model<T> {
      * Carga una relación belongsTo
      */
     private async loadBelongsTo(
-        row: any, 
-        relation: BelongsToRelation, 
+        row: any,
+        relation: BelongsToRelation,
         client: any,
         options?: IncludeOption
     ): Promise<any> {
@@ -543,11 +649,21 @@ export class Model<T> {
         if (!foreignKeyValue) return null;
 
         const { clause, values } = this.buildWhereClause(
-            options?.where || {}, 
+            options?.where || {},
             2 // startingIndex = 2 porque $1 es para foreignKeyValue
         );
         const orderClause = this.buildOrderClause(options?.order);
         const limitClause = options?.limit ? ` LIMIT ${options.limit}` : ' LIMIT 1';
+
+        // Si se solicitan includes anidados, delegar al model relacionado (usa su propia transacción)
+        if (options?.include && options.include.length > 0) {
+            try {
+                return await relation.model.findByPk(foreignKeyValue, options.include);
+            } catch (err) {
+                // Si falla la carga por include anidado, fallback a consulta directa
+                console.warn('Nested include failed, falling back to simple query:', err);
+            }
+        }
 
         const query = `SELECT * FROM ${relation.model.tableName} WHERE ${relation.localKey || 'id'} = $1${clause}${orderClause}${limitClause}`;
         const result = await client.query(query, [foreignKeyValue, ...values]);
@@ -558,8 +674,8 @@ export class Model<T> {
      * Carga una relación hasMany
      */
     private async loadHasMany(
-        row: any, 
-        relation: HasManyRelation, 
+        row: any,
+        relation: HasManyRelation,
         client: any,
         options?: IncludeOption
     ): Promise<any[]> {
@@ -575,7 +691,7 @@ export class Model<T> {
 
         // Construir la condición base de la relación
         const baseCondition = `${relation.foreignKey} = $1`;
-        const whereClause = clause 
+        const whereClause = clause
             ? ` WHERE ${baseCondition} AND ${clause.replace('WHERE ', '')}`
             : ` WHERE ${baseCondition}`;
 
@@ -588,8 +704,8 @@ export class Model<T> {
      * Carga una relación belongsToMany (muchos a muchos)
      */
     private async loadBelongsToMany(
-        row: any, 
-        relation: BelongsToManyRelation, 
+        row: any,
+        relation: BelongsToManyRelation,
         client: any,
         options?: IncludeOption
     ): Promise<any[]> {

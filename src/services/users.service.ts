@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { Model } from 'src/database/model.config';
 import { CreateUserDto } from '../dto/create-user.dto';
+import { UserFilters } from 'src/dto/filters.dto';
 import { UpdateUserDto } from '../dto/update-user.dto';
 import { PgService } from 'src/database/pg-config.service';
 import { User } from 'src/entities/user.entity';
@@ -36,15 +37,43 @@ export class UsersService {
     return this.excludePassword(user);
   }
 
-  async findAll() {
-    const users = await this._userModel.findAll({});
-    return users.map(user => this.excludePassword(user));
+  async findAll(filters: UserFilters = { page: 1, limit: 10 }) {
+    const page = Number(filters.page) || 1;
+    const limit = Number(filters.limit) || 10;
+    const offset = (page - 1) * limit;
+
+    const where: Record<string, any> = {};
+
+    if (filters.searchTerm && filters.searchTerm !== '') {
+      where.fullname = { ilike: `%${filters.searchTerm}%` };
+    }
+
+    const result = await this._userModel.findAndCountAll({ where, include: ['institution'], limit, offset });
+
+    const total = result.count || 0;
+    const totalPages = limit > 0 ? Math.ceil(total / limit) : 1;
+    const hasNext = page < totalPages;
+    const hasPrevious = page > 1;
+
+    const data = (result.rows || []).map((user: any) => this.excludePassword(user));
+
+    return {
+      data,
+      metadata: {
+        page,
+        totalPages,
+        hasNext,
+        hasPrevious,
+        total
+      }
+    };
   }
 
   async findOne(id: string) {
     const userId = UUID.fromString(id);
     const user = await this._userModel.findOne({ 
-      where: { id: userId.getValue() } 
+      where: { id: userId.getValue() },
+      include: ['institution']
     });
 
     if (!user) {
@@ -56,14 +85,16 @@ export class UsersService {
 
   async findByUsername(username: string) {
     const user = await this._userModel.findOne({ 
-      where: { username } 
+      where: { username },
+      include: ['institution']
     });
     return user || null;
   }
 
   async findByEmail(email: string) {
     const user = await this._userModel.findOne({ 
-      where: { email } 
+      where: { email },
+      include: ['institution']
     });
     return user || null;
   }

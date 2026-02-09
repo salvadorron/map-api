@@ -1,4 +1,5 @@
 CREATE EXTENSION IF NOT EXISTS postgis WITH SCHEMA public;
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
 
 CREATE TABLE IF NOT EXISTS public.categories (
     id UUID PRIMARY KEY,
@@ -142,6 +143,21 @@ ALTER TABLE ONLY public.institution_category_assignment ADD CONSTRAINT fk_ica_in
 ALTER TABLE ONLY public.institution_category_assignment ADD CONSTRAINT fk_ica_category_id FOREIGN KEY (category_id) REFERENCES public.categories(id) ON DELETE CASCADE;
 ALTER TABLE ONLY public.logs ADD CONSTRAINT fk_log_user FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE SET NULL;
 
+-- 1. Eliminar las restricciones actuales de cascada
+ALTER TABLE public.shapes_categories DROP CONSTRAINT fk_sc_category_id;
+ALTER TABLE public.form_category_assignment DROP CONSTRAINT fk_fca_category_id;
+ALTER TABLE public.institution_category_assignment DROP CONSTRAINT fk_ica_category_id;
+
+-- 2. Volver a crearlas con RESTRICT
+-- Esto lanzará un error SQL si intentas borrar una categoría usada en estas tablas
+ALTER TABLE public.shapes_categories 
+    ADD CONSTRAINT fk_sc_category_id FOREIGN KEY (category_id)
+    REFERENCES public.categories(id) ON DELETE RESTRICT;
+
+ALTER TABLE public.form_category_assignment 
+    ADD CONSTRAINT fk_fca_category_id FOREIGN KEY (category_id) 
+    REFERENCES public.categories(id) ON DELETE RESTRICT;
+
 -- Índices
 CREATE INDEX IF NOT EXISTS idx_shapes_geom ON public.shapes USING GIST (geom);
 CREATE INDEX IF NOT EXISTS idx_users_role ON public.users(role);
@@ -158,6 +174,8 @@ CREATE INDEX IF NOT EXISTS idx_institution_category_assignment_category_id ON pu
 CREATE INDEX IF NOT EXISTS idx_filled_forms_shape_id ON public.filled_forms(shape_id);
 CREATE INDEX IF NOT EXISTS idx_filled_forms_form_version_id ON public.filled_forms(form_version_id);
 CREATE INDEX IF NOT EXISTS idx_filled_forms_user_id ON public.filled_forms(user_id);
+CREATE INDEX IF NOT EXISTS idx_filled_forms_title_trgm ON public.filled_forms USING gin (title gin_trgm_ops);
+CREATE INDEX IF NOT EXISTS idx_filled_forms_records_trgm ON public.filled_forms USING gin ((records::text) gin_trgm_ops);
 CREATE INDEX IF NOT EXISTS idx_form_versions_form_id ON public.form_versions(form_id);
 CREATE INDEX IF NOT EXISTS idx_form_versions_is_active ON public.form_versions(form_id, is_active) WHERE is_active = TRUE;
 CREATE INDEX IF NOT EXISTS idx_categories_parent_id ON public.categories(parent_id);

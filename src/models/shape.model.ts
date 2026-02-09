@@ -204,7 +204,6 @@ export class ShapeModel extends BaseModel<Shape> {
     institution_id?: string;
     status?: string;
     municipality?: string;
-    parrish_ids?: string;
   }): Promise<ShapeWithGeometry[]> {
     this.initialize();
     
@@ -224,7 +223,7 @@ export class ShapeModel extends BaseModel<Shape> {
       // Obtener solo los IDs
       const filteredIds = filteredShapes.map((shape: any) => shape.id);
       
-      // Aplicar los filtros adicionales (institution_id, status, municipality, parrish_ids)
+      // Aplicar los filtros adicionales (institution_id, status, municipality)
       // construyendo una consulta con los IDs filtrados
       const tableName = (this.model as any).tableName || 'shapes';
       const baseQuery = `
@@ -263,12 +262,7 @@ export class ShapeModel extends BaseModel<Shape> {
         paramIndex++;
       }
 
-      if (options?.parrish_ids && !options.parrish_ids.includes('ALL')) {
-        const parrishIds = options.parrish_ids.split(',').map(prq => prq.trim());
-        conditions.push(`(properties->>'cod_prq')::uuid = ANY($${paramIndex}::uuid[])`);
-        values.push(parrishIds);
-        paramIndex++;
-      }
+      // parrish filtering removed
 
       const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
       // Construir ORDER BY
@@ -369,12 +363,7 @@ export class ShapeModel extends BaseModel<Shape> {
       paramIndex++;
     }
 
-    if (options?.parrish_ids && !options.parrish_ids.includes('ALL')) {
-      const parrishIds = options.parrish_ids.split(',').map(prq => prq.trim());
-      conditions.push(`(properties->>'cod_prq')::uuid = ANY($${paramIndex}::uuid[])`);
-      values.push(parrishIds);
-      paramIndex++;
-    }
+    // parrish filtering removed
 
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 

@@ -1,5 +1,5 @@
 import { Type } from "class-transformer";
-import { IsBoolean, IsBooleanString, IsOptional, IsString } from "class-validator";
+import { IsBoolean, IsBooleanString, IsNumber, IsOptional, IsString } from "class-validator";
 
 export class ParrishFilters {
     @IsOptional()
@@ -21,6 +21,52 @@ export class CategoryFilters {
     @IsOptional()
     @IsBooleanString()
     is_public?: string = 'false'
+
+    @IsOptional()
+    @IsNumber()
+    @Type(() => Number)
+    page?: number = 1
+
+    @IsOptional()
+    @IsNumber()
+    @Type(() => Number)
+    limit?: number = 3
+
+    @IsOptional()
+    @IsString()
+    searchTerm?: string
+
+    @IsOptional()
+    @IsString()
+    name?: string
+}
+
+export class UserFilters {
+    @IsOptional()
+    @IsNumber()
+    @Type(() => Number)
+    page?: number = 1
+
+    @IsOptional()
+    @IsNumber()
+    @Type(() => Number)
+    limit?: number = 10
+
+    @IsOptional()
+    @IsString()
+    searchTerm?: string
+}
+
+export class LogFilters {
+    @IsOptional()
+    @IsNumber()
+    @Type(() => Number)
+    page?: number = 1
+
+    @IsOptional()
+    @IsNumber()
+    @Type(() => Number)
+    limit?: number = 25
 }
 
 export class FormFilters {
@@ -46,7 +92,7 @@ export class ShapeFilters {
 
     @IsOptional()
     @IsString()
-    parrish_ids?: string
+    // parrish_ids removed — parroquia filters are not used anymore
 
     @IsOptional()
     @IsString()

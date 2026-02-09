@@ -359,5 +359,70 @@ describe('FilledFormService', () => {
       }
     });
   });
+
+  describe('search', () => {
+    it('should return exact matches and snippet', async () => {
+      // Arrange
+      const q = 'pozo artesanal';
+      const rows = [
+        {
+          id: 'ff_1',
+          title: 'Registro pozos agua',
+          shape_id: 'shape_123',
+          shape_name: 'Cancha de Futbol',
+          municipality_name: 'San juan de los morros',
+          parrish_name: 'Juan german Roscio',
+          snippet: 'pozo artesanal...'
+        }
+      ];
+
+      mockClient.query
+        .mockResolvedValueOnce({ rows: [{ cnt: 1 }], rowCount: 1 }) // pg_trgm present
+        .mockResolvedValueOnce({ rows, rowCount: rows.length });
+
+      // Act
+      const result = await service.search(q, 1, 50);
+
+      // Assert
+      expect(mockClient.query).toHaveBeenCalledTimes(2);
+      expect(Array.isArray(result)).toBeTruthy();
+      expect(result[0]).toHaveProperty('id', 'ff_1');
+      expect(result[0]).toHaveProperty('snippet');
+      expect(result[0]).toHaveProperty('shape_name', 'Cancha de Futbol');
+      expect(result[0]).toHaveProperty('municipality_name', 'San juan de los morros');
+      expect(result[0]).toHaveProperty('parrish_name', 'Juan german Roscio');
+    });
+
+    it('should return partial matches', async () => {
+      // Arrange
+      const q = 'pozo';
+      const rows = [
+        {
+          id: 'ff_2',
+          title: 'Pozo comunitario',
+          shape_id: 'shape_456',
+          shape_name: 'Pozo principal',
+          municipality_name: 'Municipio X',
+          parrish_name: 'Parroquia Y',
+          snippet: 'Pozo comunitario en...'
+        }
+      ];
+
+      mockClient.query
+        .mockResolvedValueOnce({ rows: [{ cnt: 1 }], rowCount: 1 }) // pg_trgm present
+        .mockResolvedValueOnce({ rows, rowCount: rows.length });
+
+      // Act
+      const result = await service.search(q, 1, 50);
+
+      // Assert
+      expect(mockClient.query).toHaveBeenCalledTimes(2);
+      expect(result.length).toBeGreaterThan(0);
+      expect(result[0].title).toContain('Pozo');
+      expect(result[0]).toHaveProperty('shape_name', 'Pozo principal');
+      expect(result[0]).toHaveProperty('municipality_name', 'Municipio X');
+      expect(result[0]).toHaveProperty('parrish_name', 'Parroquia Y');
+    });
+  });
 });
 

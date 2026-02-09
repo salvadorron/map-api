@@ -94,10 +94,9 @@ export class ShapeService {
     }
 
     if (filters.municipality_ids && !filters.municipality_ids.includes('ALL')) {
-      options.municipality_ids = filters.municipality_ids;
+      options.municipality = filters.municipality_ids;
     }
 
-    // Filtrar por category_ids usando whereRelation (relación many-to-many)
     if (filters.category_ids && !filters.category_ids.includes('ALL')) {
       const splittedCategories = filters.category_ids.split(',');
       options.whereRelation = {
@@ -107,15 +106,9 @@ export class ShapeService {
       };
     }
 
-    // Filtrar por parrish_ids usando properties->>'cod_prq'
-    if (filters.parrish_ids && !filters.parrish_ids.includes('ALL')) {
-      options.parrish_ids = filters.parrish_ids;
-    }
 
 
     const shapes = await this.shapeModel.findAll(options);
-
-
 
     return shapes.map(shape => ({
       type: 'Feature',
