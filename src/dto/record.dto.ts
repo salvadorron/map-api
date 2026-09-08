@@ -28,7 +28,7 @@ export function IsMapNotEmpty(validationOptions?: ValidationOptions) {
 }
 
 export class RecordDto {
-    @IsNotEmpty({ message: 'value is required.' })
+    @IsOptional()
     value: string | string[];
 
     @IsString({ message: 'label must be a string.' })
@@ -37,6 +37,6 @@ export class RecordDto {
 
     @IsString({ message: 'type must be a string.' })
     @IsOptional()
-    @IsIn(['textarea', 'date', 'text', 'number', 'select', 'checkbox'], { message: 'type must be one of the following: textarea, date, text, number, select, checkbox.' })
+    @IsIn(['textarea', 'date', 'text', 'number', 'select', 'checkbox', 'image'], { message: 'type must be one of the following: textarea, date, text, number, select, checkbox, image.' })
     type?: string;
 }

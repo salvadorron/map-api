@@ -12,7 +12,7 @@ class Option {
 }
 export class InputDto {
     @IsString({ message: 'inputType must be a string.' })
-    @IsIn(['textarea', 'date', 'text', 'number', 'select', 'checkbox'], { message: 'inputType must be one of the following: textarea, date, text, number, select, checkbox.' })
+    @IsIn(['textarea', 'date', 'text', 'number', 'select', 'checkbox', 'image'], { message: 'inputType must be one of the following: textarea, date, text, number, select, checkbox, image.' })
     inputType: string;
 
     @IsString({ message: 'label must be a string.' })

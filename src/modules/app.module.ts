@@ -20,6 +20,7 @@ import { ModuleRef } from "@nestjs/core";
 import { ReportsModule } from './reports.module';
 import { LoggingInterceptor } from "src/interceptors/logging.interceptor";
 import { HealthModule } from "./health.module";
+import { UploadModule } from './upload.module';
 
 
 @Module({
@@ -42,6 +43,7 @@ import { HealthModule } from "./health.module";
     AlsModule,
     AuthMiddlewareModule,
     ReportsModule,
+    UploadModule,
   ],
   controllers: [],
   providers: [
