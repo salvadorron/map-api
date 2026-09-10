@@ -42,7 +42,7 @@ describe('InstitutionController', () => {
     // Arrange: Preparar los datos de entrada (DTO)
     const createInstitutionDto = {
       code: 'INST001',
-      name: 'Test Institution'
+      name: 'Test Institution',
     };
 
     // Preparar la respuesta esperada del servicio
@@ -51,7 +51,7 @@ describe('InstitutionController', () => {
       code: 'INST001',
       name: 'Test Institution',
       created_at: new Date(),
-      updated_at: new Date()
+      updated_at: new Date(),
     };
 
     // Configurar el mock del servicio
@@ -61,7 +61,9 @@ describe('InstitutionController', () => {
     const result = await controller.create(createInstitutionDto);
 
     // Assert: Verificar que el servicio fue llamado correctamente
-    expect(mockInstitutionService.create).toHaveBeenCalledWith(createInstitutionDto);
+    expect(mockInstitutionService.create).toHaveBeenCalledWith(
+      createInstitutionDto,
+    );
     expect(mockInstitutionService.create).toHaveBeenCalledTimes(1);
 
     // Verificar que el resultado es el esperado
@@ -79,22 +81,22 @@ describe('InstitutionController', () => {
         code: 'INST001',
         name: 'Institution A',
         created_at: new Date(),
-        updated_at: new Date()
+        updated_at: new Date(),
       },
       {
         id: '223e4567-e89b-12d3-a456-426614174000',
         code: 'INST002',
         name: 'Institution B',
         created_at: new Date(),
-        updated_at: new Date()
+        updated_at: new Date(),
       },
       {
         id: '323e4567-e89b-12d3-a456-426614174000',
         code: 'INST003',
         name: 'Institution C',
         created_at: new Date(),
-        updated_at: new Date()
-      }
+        updated_at: new Date(),
+      },
     ];
 
     // Configurar el mock del servicio
@@ -127,7 +129,7 @@ describe('InstitutionController', () => {
       code: 'INST001',
       name: 'Test Institution',
       created_at: new Date(),
-      updated_at: new Date()
+      updated_at: new Date(),
     };
 
     // Configurar el mock del servicio
@@ -153,7 +155,7 @@ describe('InstitutionController', () => {
     const institutionId = '123e4567-e89b-12d3-a456-426614174000';
     const updateInstitutionDto = {
       name: 'Updated Institution Name',
-      code: 'INST001-UPDATED'
+      code: 'INST001-UPDATED',
     };
 
     // Preparar la respuesta esperada del servicio
@@ -162,7 +164,7 @@ describe('InstitutionController', () => {
       code: 'INST001-UPDATED',
       name: 'Updated Institution Name',
       created_at: new Date(),
-      updated_at: new Date()
+      updated_at: new Date(),
     };
 
     // Configurar el mock del servicio
@@ -172,7 +174,10 @@ describe('InstitutionController', () => {
     const result = await controller.update(institutionId, updateInstitutionDto);
 
     // Assert: Verificar que el servicio fue llamado correctamente
-    expect(mockInstitutionService.update).toHaveBeenCalledWith(institutionId, updateInstitutionDto);
+    expect(mockInstitutionService.update).toHaveBeenCalledWith(
+      institutionId,
+      updateInstitutionDto,
+    );
     expect(mockInstitutionService.update).toHaveBeenCalledTimes(1);
 
     // Verificar que el resultado es el esperado
@@ -187,7 +192,7 @@ describe('InstitutionController', () => {
     // Arrange: Preparar el ID y solo algunos datos de actualización
     const institutionId = '123e4567-e89b-12d3-a456-426614174000';
     const updateInstitutionDto = {
-      name: 'Updated Institution Name Only'
+      name: 'Updated Institution Name Only',
     };
 
     // Preparar la respuesta esperada del servicio
@@ -196,7 +201,7 @@ describe('InstitutionController', () => {
       code: 'INST001', // Código original se mantiene
       name: 'Updated Institution Name Only',
       created_at: new Date(),
-      updated_at: new Date()
+      updated_at: new Date(),
     };
 
     // Configurar el mock del servicio
@@ -206,7 +211,10 @@ describe('InstitutionController', () => {
     const result = await controller.update(institutionId, updateInstitutionDto);
 
     // Assert: Verificar que el servicio fue llamado correctamente
-    expect(mockInstitutionService.update).toHaveBeenCalledWith(institutionId, updateInstitutionDto);
+    expect(mockInstitutionService.update).toHaveBeenCalledWith(
+      institutionId,
+      updateInstitutionDto,
+    );
     expect(mockInstitutionService.update).toHaveBeenCalledTimes(1);
 
     // Verificar que el resultado es el esperado
@@ -222,7 +230,7 @@ describe('InstitutionController', () => {
 
     // Preparar la respuesta esperada del servicio
     const expectedResponse = {
-      message: `Institución con ID: (${institutionId}) ha sido eliminada exitosamente!`
+      message: `Institución con ID: (${institutionId}) ha sido eliminada exitosamente!`,
     };
 
     // Configurar el mock del servicio

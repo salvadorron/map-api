@@ -51,20 +51,20 @@ describe('MunicipalityService', () => {
           name: 'Municipality A',
           short_name: 'MUN-A',
           created_at: new Date(),
-          updated_at: new Date()
+          updated_at: new Date(),
         },
         {
           id: '223e4567-e89b-12d3-a456-426614174000',
           name: 'Municipality B',
           short_name: 'MUN-B',
           created_at: new Date(),
-          updated_at: new Date()
-        }
+          updated_at: new Date(),
+        },
       ];
 
       mockClient.query.mockResolvedValueOnce({
         rows: expectedMunicipalities,
-        rowCount: 2
+        rowCount: 2,
       });
 
       // Act
@@ -80,7 +80,7 @@ describe('MunicipalityService', () => {
       // Arrange
       mockClient.query.mockResolvedValueOnce({
         rows: [],
-        rowCount: 0
+        rowCount: 0,
       });
 
       // Act
@@ -101,12 +101,12 @@ describe('MunicipalityService', () => {
         name: 'Test Municipality',
         short_name: 'MUN-TEST',
         created_at: new Date(),
-        updated_at: new Date()
+        updated_at: new Date(),
       };
 
       mockClient.query.mockResolvedValueOnce({
         rows: [expectedMunicipality],
-        rowCount: 1
+        rowCount: 1,
       });
 
       // Act
@@ -123,7 +123,7 @@ describe('MunicipalityService', () => {
 
       mockClient.query.mockResolvedValueOnce({
         rows: [],
-        rowCount: 0
+        rowCount: 0,
       });
 
       // Act & Assert
@@ -132,7 +132,9 @@ describe('MunicipalityService', () => {
         fail('Should have thrown NotFoundException');
       } catch (error) {
         expect(error).toBeInstanceOf(NotFoundException);
-        expect(error.message).toBe(`Municipality with ID ${municipalityId} not found.`);
+        expect(error.message).toBe(
+          `Municipality with ID ${municipalityId} not found.`,
+        );
       }
     });
   });

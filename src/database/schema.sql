@@ -79,6 +79,16 @@ CREATE TABLE IF NOT EXISTS public.shapes_categories (
     PRIMARY KEY (shape_id, category_id)
 );
 
+CREATE TABLE IF NOT EXISTS public.shape_images (
+    id UUID PRIMARY KEY,
+    shape_id UUID NOT NULL,
+    url TEXT NOT NULL,
+    name CHARACTER VARYING(255),
+    size INTEGER,
+    position INTEGER NOT NULL DEFAULT 0,
+    created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW() NOT NULL
+);
+
 CREATE TYPE public.user_role AS ENUM ('SUPER_ADMIN', 'ADMIN_USER', 'OPERATOR_USER');
 
 CREATE TABLE IF NOT EXISTS public.users (
@@ -133,6 +143,7 @@ ALTER TABLE ONLY public.filled_forms ADD CONSTRAINT fk_shape_id FOREIGN KEY (sha
 ALTER TABLE ONLY public.parrishes ADD CONSTRAINT fk_municipality_id FOREIGN KEY (municipality_id) REFERENCES public.municipalities(id);
 ALTER TABLE ONLY public.shapes_categories ADD CONSTRAINT fk_sc_shape_id FOREIGN KEY (shape_id) REFERENCES public.shapes(id) ON DELETE CASCADE;
 ALTER TABLE ONLY public.shapes_categories ADD CONSTRAINT fk_sc_category_id FOREIGN KEY (category_id) REFERENCES public.categories(id) ON DELETE CASCADE;
+ALTER TABLE ONLY public.shape_images ADD CONSTRAINT fk_shape_image_shape_id FOREIGN KEY (shape_id) REFERENCES public.shapes(id) ON DELETE CASCADE;
 ALTER TABLE ONLY public.users ADD CONSTRAINT fk_user_role FOREIGN KEY (role_id) REFERENCES public.roles(id) ON DELETE RESTRICT;
 ALTER TABLE ONLY public.users ADD CONSTRAINT fk_user_institution FOREIGN KEY (institution_id) REFERENCES public.institutions(id) ON DELETE SET NULL;
 ALTER TABLE ONLY public.form_category_assignment ADD CONSTRAINT fk_fca_form_id FOREIGN KEY (form_id) REFERENCES public.forms(id) ON DELETE CASCADE;
@@ -172,6 +183,7 @@ CREATE INDEX IF NOT EXISTS idx_form_category_assignment_category_id ON public.fo
 CREATE INDEX IF NOT EXISTS idx_institution_category_assignment_institution_id ON public.institution_category_assignment(institution_id);
 CREATE INDEX IF NOT EXISTS idx_institution_category_assignment_category_id ON public.institution_category_assignment(category_id);
 CREATE INDEX IF NOT EXISTS idx_filled_forms_shape_id ON public.filled_forms(shape_id);
+CREATE INDEX IF NOT EXISTS idx_shape_images_shape_id ON public.shape_images(shape_id);
 CREATE INDEX IF NOT EXISTS idx_filled_forms_form_version_id ON public.filled_forms(form_version_id);
 CREATE INDEX IF NOT EXISTS idx_filled_forms_user_id ON public.filled_forms(user_id);
 CREATE INDEX IF NOT EXISTS idx_filled_forms_title_trgm ON public.filled_forms USING gin (title gin_trgm_ops);

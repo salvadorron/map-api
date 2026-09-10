@@ -17,9 +17,15 @@ export class FormModel extends BaseModel<Form> {
 
   protected initializeRelations(): void {
     // Crear modelos relacionados internamente
-    this.formVersionModel = new Model<FormVersion>('form_versions', this.pgService);
+    this.formVersionModel = new Model<FormVersion>(
+      'form_versions',
+      this.pgService,
+    );
     this.categoryModel = new Model<Category>('categories', this.pgService);
-    this.formCategoryAssignamentModel = new Model<FormCategoryAssignament>('form_category_assignment', this.pgService);
+    this.formCategoryAssignamentModel = new Model<FormCategoryAssignament>(
+      'form_category_assignment',
+      this.pgService,
+    );
 
     // Definir relaciones - se ejecuta automáticamente
     this.model.hasMany('versions', this.formVersionModel, 'form_id', 'id');
@@ -28,7 +34,7 @@ export class FormModel extends BaseModel<Form> {
       this.categoryModel,
       'form_category_assignment',
       'form_id',
-      'category_id'
+      'category_id',
     );
     this.formVersionModel.belongsTo('form', this.model, 'form_id', 'id');
   }

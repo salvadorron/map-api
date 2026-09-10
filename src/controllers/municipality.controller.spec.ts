@@ -40,22 +40,22 @@ describe('MunicipalityController', () => {
         name: 'Municipality A',
         short_name: 'MUN-A',
         created_at: new Date(),
-        updated_at: new Date()
+        updated_at: new Date(),
       },
       {
         id: '223e4567-e89b-12d3-a456-426614174000',
         name: 'Municipality B',
         short_name: 'MUN-B',
         created_at: new Date(),
-        updated_at: new Date()
+        updated_at: new Date(),
       },
       {
         id: '323e4567-e89b-12d3-a456-426614174000',
         name: 'Municipality C',
         short_name: 'MUN-C',
         created_at: new Date(),
-        updated_at: new Date()
-      }
+        updated_at: new Date(),
+      },
     ];
 
     // Configurar el mock del servicio
@@ -72,7 +72,7 @@ describe('MunicipalityController', () => {
     expect(result).toBeDefined();
     expect(result).toEqual(expectedMunicipalities);
     expect(result).toHaveLength(3);
-    
+
     // Verificar que los municipios tienen la estructura correcta
     expect(result[0]).toHaveProperty('id');
     expect(result[0]).toHaveProperty('name');
@@ -109,7 +109,7 @@ describe('MunicipalityController', () => {
       name: 'Test Municipality',
       short_name: 'MUN-TEST',
       created_at: new Date(),
-      updated_at: new Date()
+      updated_at: new Date(),
     };
 
     // Configurar el mock del servicio
@@ -119,7 +119,9 @@ describe('MunicipalityController', () => {
     const result = await controller.findOne(municipalityId);
 
     // Assert: Verificar que el servicio fue llamado correctamente
-    expect(mockMunicipalityService.findOne).toHaveBeenCalledWith(municipalityId);
+    expect(mockMunicipalityService.findOne).toHaveBeenCalledWith(
+      municipalityId,
+    );
     expect(mockMunicipalityService.findOne).toHaveBeenCalledTimes(1);
 
     // Verificar que el resultado es el esperado

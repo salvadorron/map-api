@@ -62,7 +62,7 @@ describe('CategoryService', () => {
         name: 'Test Category',
         color: '#000000',
         element_type: 'text',
-        icon: 'test-icon'
+        icon: 'test-icon',
       };
 
       const expectedCategory = {
@@ -73,12 +73,12 @@ describe('CategoryService', () => {
         icon: 'test-icon',
         parent_id: null,
         created_at: new Date(),
-        updated_at: new Date()
+        updated_at: new Date(),
       };
 
       mockClient.query.mockResolvedValueOnce({
         rows: [expectedCategory],
-        rowCount: 1
+        rowCount: 1,
       });
 
       // Act
@@ -95,7 +95,7 @@ describe('CategoryService', () => {
       const parentId = '223e4567-e89b-12d3-a456-426614174000';
       const createCategoryDto = {
         name: 'Child Category',
-        parent_id: parentId
+        parent_id: parentId,
       };
 
       const expectedCategory = {
@@ -103,12 +103,12 @@ describe('CategoryService', () => {
         name: 'Child Category',
         parent_id: parentId,
         created_at: new Date(),
-        updated_at: new Date()
+        updated_at: new Date(),
       };
 
       mockClient.query.mockResolvedValueOnce({
         rows: [expectedCategory],
-        rowCount: 1
+        rowCount: 1,
       });
 
       // Act
@@ -124,24 +124,24 @@ describe('CategoryService', () => {
       const institutionId = '423e4567-e89b-12d3-a456-426614174000';
       const createCategoryDto = {
         name: 'Institution Category',
-        institution_id: institutionId
+        institution_id: institutionId,
       };
 
       const expectedCategory = {
         id: '523e4567-e89b-12d3-a456-426614174000',
         name: 'Institution Category',
         created_at: new Date(),
-        updated_at: new Date()
+        updated_at: new Date(),
       };
 
       mockClient.query
         .mockResolvedValueOnce({
           rows: [expectedCategory],
-          rowCount: 1
+          rowCount: 1,
         })
         .mockResolvedValueOnce({
           rows: [],
-          rowCount: 1
+          rowCount: 1,
         });
 
       // Act
@@ -161,19 +161,19 @@ describe('CategoryService', () => {
           id: '123e4567-e89b-12d3-a456-426614174000',
           name: 'Category 1',
           created_at: new Date(),
-          updated_at: new Date()
+          updated_at: new Date(),
         },
         {
           id: '223e4567-e89b-12d3-a456-426614174000',
           name: 'Category 2',
           created_at: new Date(),
-          updated_at: new Date()
-        }
+          updated_at: new Date(),
+        },
       ];
 
       mockClient.query.mockResolvedValueOnce({
         rows: expectedCategories,
-        rowCount: 2
+        rowCount: 2,
       });
 
       // Act
@@ -188,7 +188,8 @@ describe('CategoryService', () => {
     it('should find categories with parent_ids filter', async () => {
       // Arrange
       const filters = {
-        parent_ids: '123e4567-e89b-12d3-a456-426614174000,223e4567-e89b-12d3-a456-426614174000'
+        parent_ids:
+          '123e4567-e89b-12d3-a456-426614174000,223e4567-e89b-12d3-a456-426614174000',
       };
 
       const expectedCategories = [
@@ -197,13 +198,13 @@ describe('CategoryService', () => {
           name: 'Child 1',
           parent_id: '123e4567-e89b-12d3-a456-426614174000',
           created_at: new Date(),
-          updated_at: new Date()
-        }
+          updated_at: new Date(),
+        },
       ];
 
       mockClient.query.mockResolvedValueOnce({
         rows: expectedCategories,
-        rowCount: 1
+        rowCount: 1,
       });
 
       // Act
@@ -226,13 +227,13 @@ describe('CategoryService', () => {
           id: '523e4567-e89b-12d3-a456-426614174000',
           name: 'Institution Category',
           created_at: new Date(),
-          updated_at: new Date()
-        }
+          updated_at: new Date(),
+        },
       ];
 
       mockClient.query.mockResolvedValueOnce({
         rows: expectedCategories,
-        rowCount: 1
+        rowCount: 1,
       });
 
       // Act
@@ -255,12 +256,12 @@ describe('CategoryService', () => {
         id: categoryId,
         name: 'Test Category',
         created_at: new Date(),
-        updated_at: new Date()
+        updated_at: new Date(),
       };
 
       mockClient.query.mockResolvedValueOnce({
         rows: [expectedCategory],
-        rowCount: 1
+        rowCount: 1,
       });
 
       // Act
@@ -277,7 +278,7 @@ describe('CategoryService', () => {
 
       mockClient.query.mockResolvedValueOnce({
         rows: [],
-        rowCount: 0
+        rowCount: 0,
       });
 
       // Act & Assert
@@ -297,7 +298,7 @@ describe('CategoryService', () => {
       const categoryId = '123e4567-e89b-12d3-a456-426614174000';
       const updateCategoryDto = {
         name: 'Updated Category',
-        color: '#FF0000'
+        color: '#FF0000',
       };
 
       const expectedCategory = {
@@ -305,12 +306,12 @@ describe('CategoryService', () => {
         name: 'Updated Category',
         color: '#FF0000',
         created_at: new Date(),
-        updated_at: new Date()
+        updated_at: new Date(),
       };
 
       mockClient.query.mockResolvedValueOnce({
         rows: [expectedCategory],
-        rowCount: 1
+        rowCount: 1,
       });
 
       // Act
@@ -325,19 +326,19 @@ describe('CategoryService', () => {
       const categoryId = '123e4567-e89b-12d3-a456-426614174000';
       const parentId = '223e4567-e89b-12d3-a456-426614174000';
       const updateCategoryDto = {
-        parent_id: parentId
+        parent_id: parentId,
       };
 
       const expectedCategory = {
         id: categoryId,
         parent_id: parentId,
         created_at: new Date(),
-        updated_at: new Date()
+        updated_at: new Date(),
       };
 
       mockClient.query.mockResolvedValueOnce({
         rows: [expectedCategory],
-        rowCount: 1
+        rowCount: 1,
       });
 
       // Act
@@ -354,20 +355,24 @@ describe('CategoryService', () => {
       const updateCategoryDto = {};
 
       // Act & Assert
-      await expect(service.update(categoryId, updateCategoryDto)).rejects.toThrow(BadRequestException);
-      await expect(service.update(categoryId, updateCategoryDto)).rejects.toThrow('Must be at least one property to patch');
+      await expect(
+        service.update(categoryId, updateCategoryDto),
+      ).rejects.toThrow(BadRequestException);
+      await expect(
+        service.update(categoryId, updateCategoryDto),
+      ).rejects.toThrow('Must be at least one property to patch');
     });
 
     it('should throw NotFoundException when category not found', async () => {
       // Arrange
       const categoryId = '123e4567-e89b-12d3-a456-426614174000';
       const updateCategoryDto = {
-        name: 'Updated Name'
+        name: 'Updated Name',
       };
 
       mockClient.query.mockResolvedValueOnce({
         rows: [],
-        rowCount: 0
+        rowCount: 0,
       });
 
       // Act & Assert
@@ -386,21 +391,21 @@ describe('CategoryService', () => {
       // Arrange
       const categoryId = '123e4567-e89b-12d3-a456-426614174000';
       const deletedCategory = {
-        id: categoryId
+        id: categoryId,
       };
 
       mockClient.query.mockResolvedValueOnce({
         rows: [deletedCategory],
-        rowCount: 1
+        rowCount: 1,
       });
 
       // Act
       const result = await service.remove(categoryId);
 
       // Assert
-  
+
       expect(result).toEqual({
-        message: `Category with ID: (${categoryId}) has deleted successfully!`
+        message: `Category with ID: (${categoryId}) has deleted successfully!`,
       });
     });
 
@@ -410,7 +415,7 @@ describe('CategoryService', () => {
 
       mockClient.query.mockResolvedValueOnce({
         rows: [],
-        rowCount: 0
+        rowCount: 0,
       });
 
       // Act & Assert

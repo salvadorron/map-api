@@ -27,15 +27,20 @@ export class LogService {
       id: logId.getValue(),
       action: data.action,
       resource_type: data.resource_type,
-      resource_id: data.resource_id ? UUID.fromString(data.resource_id).getValue() : null,
+      resource_id: data.resource_id
+        ? UUID.fromString(data.resource_id).getValue()
+        : null,
       user_id: data.user_id ? UUID.fromString(data.user_id).getValue() : null,
       details: sanitizedDetails as any,
       ip_address: data.ip_address,
       user_agent: data.user_agent,
-    })
+    });
   }
 
-  private sanitizeDetails(details?: Record<string, any> | null, maxLen = 1000): string | null {
+  private sanitizeDetails(
+    details?: Record<string, any> | null,
+    maxLen = 1000,
+  ): string | null {
     if (!details) return null;
 
     const clone: any = {};
@@ -48,7 +53,8 @@ export class LogService {
       }
 
       if (typeof val === 'string') {
-        clone[key] = val.length > 200 ? val.slice(0, 200) + '... (truncated)' : val;
+        clone[key] =
+          val.length > 200 ? val.slice(0, 200) + '... (truncated)' : val;
       } else if (typeof val === 'number' || typeof val === 'boolean') {
         clone[key] = val;
       } else if (Array.isArray(val)) {
@@ -68,7 +74,9 @@ export class LogService {
       return null;
     }
   }
-  async findAll(filters: { page?: number; limit?: number } = { page: 1, limit: 25 }) {
+  async findAll(
+    filters: { page?: number; limit?: number } = { page: 1, limit: 25 },
+  ) {
     const page = Number(filters.page) || 1;
     const limit = Number(filters.limit) || 25;
     const offset = (page - 1) * limit;
@@ -95,4 +103,3 @@ export class LogService {
     };
   }
 }
-

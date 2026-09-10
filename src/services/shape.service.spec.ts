@@ -62,21 +62,21 @@ describe('ShapeService', () => {
         properties: { name: 'Test Shape' },
         geom: {
           type: 'Point',
-          coordinates: [-66.9, 10.5]
+          coordinates: [-66.9, 10.5],
         } as any,
-        institution_id: '223e4567-e89b-12d3-a456-426614174000'
+        institution_id: '223e4567-e89b-12d3-a456-426614174000',
       };
 
       const insertResult = {
         created_at: new Date(),
-        updated_at: new Date()
+        updated_at: new Date(),
       };
 
       const categories = [
         {
           id: '123e4567-e89b-12d3-a456-426614174000',
-          name: 'Category 1'
-        }
+          name: 'Category 1',
+        },
       ];
 
       const shapeIdValue = '323e4567-e89b-12d3-a456-426614174000';
@@ -87,7 +87,7 @@ describe('ShapeService', () => {
         institution_id: createShapeDto.institution_id,
         status: 'PENDING',
         created_at: insertResult.created_at,
-        updated_at: insertResult.updated_at
+        updated_at: insertResult.updated_at,
       };
 
       mockClient.query
@@ -98,7 +98,6 @@ describe('ShapeService', () => {
 
       // Act
       const result = await service.create(createShapeDto);
-
 
       // Assert
       // INSERT shape (1) + INSERT category (1) + SELECT shape (1) + SELECT through (1) + SELECT categories (1) = 5
@@ -115,13 +114,13 @@ describe('ShapeService', () => {
         properties: {},
         geom: {
           type: 'Point',
-          coordinates: [-66.9, 10.5]
-        } as any
+          coordinates: [-66.9, 10.5],
+        } as any,
       };
 
       const insertResult = {
         created_at: new Date(),
-        updated_at: new Date()
+        updated_at: new Date(),
       };
 
       const createdShape = {
@@ -131,7 +130,7 @@ describe('ShapeService', () => {
         institution_id: null,
         status: 'PENDING',
         created_at: insertResult.created_at,
-        updated_at: insertResult.updated_at
+        updated_at: insertResult.updated_at,
       };
 
       mockClient.query
@@ -159,8 +158,8 @@ describe('ShapeService', () => {
           properties: { name: 'Shape 1' },
           status: 'APPROVED',
           created_at: new Date(),
-          updated_at: new Date()
-        }
+          updated_at: new Date(),
+        },
       ];
 
       const categories = [];
@@ -185,7 +184,7 @@ describe('ShapeService', () => {
     it('should find shapes filtered by status', async () => {
       // Arrange
       const filters = {
-        status: 'APPROVED'
+        status: 'APPROVED',
       };
 
       const shapes = [
@@ -195,8 +194,8 @@ describe('ShapeService', () => {
           properties: {},
           status: 'APPROVED',
           created_at: new Date(),
-          updated_at: new Date()
-        }
+          updated_at: new Date(),
+        },
       ];
 
       mockClient.query
@@ -225,14 +224,14 @@ describe('ShapeService', () => {
         properties: { name: 'Test Shape' },
         status: 'APPROVED',
         created_at: new Date(),
-        updated_at: new Date()
+        updated_at: new Date(),
       };
 
       const categories = [
         {
           id: '223e4567-e89b-12d3-a456-426614174000',
-          name: 'Category 1'
-        }
+          name: 'Category 1',
+        },
       ];
 
       // Mock para findOneWithGeometry que incluye las categorías
@@ -240,7 +239,10 @@ describe('ShapeService', () => {
       mockClient.query
         .mockResolvedValueOnce({ rows: [shape], rowCount: 1 }) // SELECT shape (findOneWithGeometry)
         .mockResolvedValueOnce({ rows: [shape], rowCount: 1 }) // SELECT shape (findByPk - nueva transacción)
-        .mockResolvedValueOnce({ rows: [{ category_id: categories[0].id }], rowCount: 1 }) // SELECT through table
+        .mockResolvedValueOnce({
+          rows: [{ category_id: categories[0].id }],
+          rowCount: 1,
+        }) // SELECT through table
         .mockResolvedValueOnce({ rows: categories, rowCount: 1 }); // SELECT categories
 
       // Act
@@ -260,7 +262,7 @@ describe('ShapeService', () => {
 
       mockClient.query.mockResolvedValueOnce({
         rows: [],
-        rowCount: 0
+        rowCount: 0,
       });
 
       // Act & Assert
@@ -280,7 +282,7 @@ describe('ShapeService', () => {
       const shapeId = '123e4567-e89b-12d3-a456-426614174000';
       const updateShapeDto = {
         status: 'APPROVED',
-        properties: { name: 'Updated Shape' }
+        properties: { name: 'Updated Shape' },
       };
 
       const updatedShape = {
@@ -289,7 +291,7 @@ describe('ShapeService', () => {
         properties: { name: 'Updated Shape' },
         status: 'APPROVED',
         created_at: new Date(),
-        updated_at: new Date()
+        updated_at: new Date(),
       };
 
       const categories = [];
@@ -317,8 +319,12 @@ describe('ShapeService', () => {
       const updateShapeDto = {};
 
       // Act & Assert
-      await expect(service.update(shapeId, updateShapeDto)).rejects.toThrow(BadRequestException);
-      await expect(service.update(shapeId, updateShapeDto)).rejects.toThrow('Must be at least one property to patch');
+      await expect(service.update(shapeId, updateShapeDto)).rejects.toThrow(
+        BadRequestException,
+      );
+      await expect(service.update(shapeId, updateShapeDto)).rejects.toThrow(
+        'Must be at least one property to patch',
+      );
     });
   });
 
@@ -327,12 +333,12 @@ describe('ShapeService', () => {
       // Arrange
       const shapeId = '123e4567-e89b-12d3-a456-426614174000';
       const deletedShape = {
-        id: shapeId
+        id: shapeId,
       };
 
       mockClient.query.mockResolvedValueOnce({
         rows: [deletedShape],
-        rowCount: 1
+        rowCount: 1,
       });
 
       // Act
@@ -341,7 +347,7 @@ describe('ShapeService', () => {
       // Assert
       expect(mockClient.query).toHaveBeenCalledTimes(1);
       expect(result).toEqual({
-        message: `Shape with ID: (${shapeId}) has deleted successfully!`
+        message: `Shape with ID: (${shapeId}) has deleted successfully!`,
       });
     });
 
@@ -351,7 +357,7 @@ describe('ShapeService', () => {
 
       mockClient.query.mockResolvedValueOnce({
         rows: [],
-        rowCount: 0
+        rowCount: 0,
       });
 
       // Act & Assert

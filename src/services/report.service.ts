@@ -20,9 +20,16 @@ export class ReportService {
     doc.pipe(stream);
 
     // Header (compact) - Español
-    doc.fontSize(14).font('Helvetica-Bold').text('Reporte de categorías', { align: 'center' });
+    doc
+      .fontSize(14)
+      .font('Helvetica-Bold')
+      .text('Reporte de categorías', { align: 'center' });
     doc.moveDown(0.2);
-    doc.fontSize(7).font('Helvetica').fillColor('gray').text(`Generado: ${new Date().toISOString()}`, { align: 'center' });
+    doc
+      .fontSize(7)
+      .font('Helvetica')
+      .fillColor('gray')
+      .text(`Generado: ${new Date().toISOString()}`, { align: 'center' });
     doc.moveDown(0.2);
 
     // Table columns (no ID)
@@ -35,7 +42,10 @@ export class ReportService {
     doc.fontSize(9).font('Helvetica-Bold').fillColor('black');
     let x = startX;
     for (let i = 0; i < headers.length; i++) {
-      doc.text(headers[i], x, doc.y, { width: columnWidths[i], continued: false });
+      doc.text(headers[i], x, doc.y, {
+        width: columnWidths[i],
+        continued: false,
+      });
       x += columnWidths[i];
     }
     doc.moveDown(0.3);
@@ -55,7 +65,10 @@ export class ReportService {
     }
 
     doc.moveDown(0.2);
-    doc.fontSize(8).font('Helvetica-Bold').text(`Total: ${result.metadata?.total ?? result.data.length}`);
+    doc
+      .fontSize(8)
+      .font('Helvetica-Bold')
+      .text(`Total: ${result.metadata?.total ?? result.data.length}`);
     this.addFooter(doc);
     doc.end();
   }
@@ -66,9 +79,16 @@ export class ReportService {
     const doc = new PDFDocument({ margin: 50, size: 'A4' });
     doc.pipe(stream);
 
-    doc.fontSize(14).font('Helvetica-Bold').text('Reporte de usuarios', { align: 'center' });
+    doc
+      .fontSize(14)
+      .font('Helvetica-Bold')
+      .text('Reporte de usuarios', { align: 'center' });
     doc.moveDown(0.2);
-    doc.fontSize(7).font('Helvetica').fillColor('gray').text(`Generado: ${new Date().toISOString()}`, { align: 'center' });
+    doc
+      .fontSize(7)
+      .font('Helvetica')
+      .fillColor('gray')
+      .text(`Generado: ${new Date().toISOString()}`, { align: 'center' });
     doc.moveDown(0.2);
 
     const startX = doc.x;
@@ -101,7 +121,10 @@ export class ReportService {
     }
 
     doc.moveDown(0.2);
-    doc.fontSize(8).font('Helvetica-Bold').text(`Total: ${result.metadata?.total ?? result.data.length}`);
+    doc
+      .fontSize(8)
+      .font('Helvetica-Bold')
+      .text(`Total: ${result.metadata?.total ?? result.data.length}`);
     this.addFooter(doc);
     doc.end();
   }
@@ -113,23 +136,38 @@ export class ReportService {
     const doc = new PDFDocument({ margin: 50, size: 'A4' });
     doc.pipe(stream);
 
-    doc.fontSize(14).font('Helvetica-Bold').text('Reporte de actividad', { align: 'center' });
+    doc
+      .fontSize(14)
+      .font('Helvetica-Bold')
+      .text('Reporte de actividad', { align: 'center' });
     doc.moveDown(0.2);
-    doc.fontSize(7).font('Helvetica').fillColor('gray').text(`Generado: ${new Date().toISOString()}`, { align: 'center' });
+    doc
+      .fontSize(7)
+      .font('Helvetica')
+      .fillColor('gray')
+      .text(`Generado: ${new Date().toISOString()}`, { align: 'center' });
     doc.moveDown(0.2);
 
     doc.fontSize(8);
     for (const l of result.data) {
       const logItem: any = l;
       const user = logItem.user;
-      const userLabel = user ? `${user.fullname} (${user.username})` : 'unknown';
-      const instLabel = user && user.institution ? ` - ${user.institution.name}` : '';
+      const userLabel = user
+        ? `${user.fullname} (${user.username})`
+        : 'unknown';
+      const instLabel =
+        user && user.institution ? ` - ${user.institution.name}` : '';
       const ts = this.formatDate(logItem.created_at);
-      doc.text(`- [${logItem.action}] ${logItem.resource_type} por ${userLabel}${instLabel} a las ${ts}`);
+      doc.text(
+        `- [${logItem.action}] ${logItem.resource_type} por ${userLabel}${instLabel} a las ${ts}`,
+      );
     }
 
     doc.moveDown(0.2);
-    doc.fontSize(8).font('Helvetica-Bold').text(`Total: ${result.metadata?.total ?? result.data.length}`);
+    doc
+      .fontSize(8)
+      .font('Helvetica-Bold')
+      .text(`Total: ${result.metadata?.total ?? result.data.length}`);
     this.addFooter(doc);
     doc.end();
   }
@@ -137,12 +175,18 @@ export class ReportService {
   private addFooter(doc: any) {
     try {
       const footerY = doc.page.height - 40;
-      const width = doc.page.width - doc.page.margins.left - doc.page.margins.right;
+      const width =
+        doc.page.width - doc.page.margins.left - doc.page.margins.right;
       doc.fontSize(8).fillColor('gray');
-      doc.text(`Generated: ${new Date().toLocaleString()}`, doc.page.margins.left, footerY, {
-        width,
-        align: 'center',
-      });
+      doc.text(
+        `Generated: ${new Date().toLocaleString()}`,
+        doc.page.margins.left,
+        footerY,
+        {
+          width,
+          align: 'center',
+        },
+      );
     } catch (e) {
       // non-fatal for PDF generation
     }

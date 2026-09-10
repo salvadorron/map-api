@@ -46,8 +46,8 @@ describe('AuthController', () => {
         id: 'user-001',
         username: 'admin_guarico',
         role: 'admin',
-        institution: 'Gobernación de Guárico' // Metadatos que mencionaste
-      }
+        institution: 'Gobernación de Guárico', // Metadatos que mencionaste
+      },
     };
 
     // Configuramos el mock
@@ -59,7 +59,7 @@ describe('AuthController', () => {
     // Assert: Verificaciones
     expect(mockAuthService.login).toHaveBeenCalledWith(loginDto);
     expect(mockAuthService.login).toHaveBeenCalledTimes(1);
-    
+
     expect(result).toBeDefined();
     expect(result.access_token).toBeDefined();
     expect(result.user.username).toEqual(loginDto.username);

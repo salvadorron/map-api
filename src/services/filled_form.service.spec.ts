@@ -49,29 +49,34 @@ describe('FilledFormService', () => {
         form_id: '123e4567-e89b-12d3-a456-426614174000',
         shape_id: '223e4567-e89b-12d3-a456-426614174000',
         records: new Map([
-          ['field1', { value: 'test value', label: 'Test Field', type: 'text' }]
+          [
+            'field1',
+            { value: 'test value', label: 'Test Field', type: 'text' },
+          ],
         ]),
         title: 'Test Filled Form',
-        user_id: '323e4567-e89b-12d3-a456-426614174000'
+        user_id: '323e4567-e89b-12d3-a456-426614174000',
       };
 
       const formVersion = {
-        id: '423e4567-e89b-12d3-a456-426614174000'
+        id: '423e4567-e89b-12d3-a456-426614174000',
       };
 
       const filledForm = {
         id: '523e4567-e89b-12d3-a456-426614174000',
         form_version_id: formVersion.id,
         shape_id: createFilledFormDto.shape_id,
-        records: { field1: { value: 'test value', label: 'Test Field', type: 'text' } },
+        records: {
+          field1: { value: 'test value', label: 'Test Field', type: 'text' },
+        },
         title: 'Test Filled Form',
         user_id: createFilledFormDto.user_id,
         created_at: new Date(),
-        updated_at: new Date()
+        updated_at: new Date(),
       };
 
       const formIdResult = {
-        form_id: createFilledFormDto.form_id
+        form_id: createFilledFormDto.form_id,
       };
 
       mockClient.query
@@ -93,12 +98,12 @@ describe('FilledFormService', () => {
         form_id: '123e4567-e89b-12d3-a456-426614174000',
         shape_id: '223e4567-e89b-12d3-a456-426614174000',
         records: new Map([['field1', { value: 'test', label: 'Test' }]]),
-        title: 'Test Form'
+        title: 'Test Form',
       };
 
       mockClient.query.mockResolvedValueOnce({
         rows: [],
-        rowCount: 0
+        rowCount: 0,
       });
 
       // Act & Assert
@@ -107,7 +112,9 @@ describe('FilledFormService', () => {
         fail('Should have thrown NotFoundException');
       } catch (error) {
         expect(error).toBeInstanceOf(NotFoundException);
-        expect(error.message).toBe(`No active version found for form with ID ${createFilledFormDto.form_id}`);
+        expect(error.message).toBe(
+          `No active version found for form with ID ${createFilledFormDto.form_id}`,
+        );
       }
     });
   });
@@ -123,15 +130,15 @@ describe('FilledFormService', () => {
           records: {},
           title: 'Test Form',
           created_at: new Date(),
-          updated_at: new Date()
-        }
+          updated_at: new Date(),
+        },
       ];
 
       const formVersion = {
         id: '323e4567-e89b-12d3-a456-426614174000',
         form_id: '223e4567-e89b-12d3-a456-426614174000',
         version_number: 1,
-        is_active: true
+        is_active: true,
       };
 
       const expectedFilledForms = [
@@ -143,8 +150,8 @@ describe('FilledFormService', () => {
           records: {},
           title: 'Test Form',
           created_at: filledForms[0].created_at,
-          updated_at: filledForms[0].updated_at
-        }
+          updated_at: filledForms[0].updated_at,
+        },
       ];
 
       // Mock: SELECT filled_forms + SELECT form_version para cada filled_form
@@ -163,7 +170,7 @@ describe('FilledFormService', () => {
     it('should find filled forms filtered by shape_id', async () => {
       // Arrange
       const filters = {
-        shape_id: '223e4567-e89b-12d3-a456-426614174000'
+        shape_id: '223e4567-e89b-12d3-a456-426614174000',
       };
 
       const filledForms = [
@@ -174,15 +181,15 @@ describe('FilledFormService', () => {
           records: {},
           title: 'Test Form',
           created_at: new Date(),
-          updated_at: new Date()
-        }
+          updated_at: new Date(),
+        },
       ];
 
       const formVersion = {
         id: '323e4567-e89b-12d3-a456-426614174000',
         form_id: '323e4567-e89b-12d3-a456-426614174000',
         version_number: 1,
-        is_active: true
+        is_active: true,
       };
 
       const expectedFilledForms = [
@@ -194,8 +201,8 @@ describe('FilledFormService', () => {
           records: {},
           title: 'Test Form',
           created_at: filledForms[0].created_at,
-          updated_at: filledForms[0].updated_at
-        }
+          updated_at: filledForms[0].updated_at,
+        },
       ];
 
       // Mock: SELECT filled_forms + SELECT form_version para cada filled_form
@@ -223,12 +230,12 @@ describe('FilledFormService', () => {
         records: {},
         title: 'Test Form',
         created_at: new Date(),
-        updated_at: new Date()
+        updated_at: new Date(),
       };
 
       mockClient.query.mockResolvedValueOnce({
         rows: [expectedFilledForm],
-        rowCount: 1
+        rowCount: 1,
       });
 
       // Act
@@ -245,7 +252,7 @@ describe('FilledFormService', () => {
 
       mockClient.query.mockResolvedValueOnce({
         rows: [],
-        rowCount: 0
+        rowCount: 0,
       });
 
       // Act & Assert
@@ -254,7 +261,9 @@ describe('FilledFormService', () => {
         fail('Should have thrown NotFoundException');
       } catch (error) {
         expect(error).toBeInstanceOf(NotFoundException);
-        expect(error.message).toBe(`Filled form with ID ${filledFormId} not found.`);
+        expect(error.message).toBe(
+          `Filled form with ID ${filledFormId} not found.`,
+        );
       }
     });
   });
@@ -265,7 +274,7 @@ describe('FilledFormService', () => {
       const filledFormId = '123e4567-e89b-12d3-a456-426614174000';
       const updateFilledFormDto = {
         title: 'Updated Title',
-        records: new Map([['field1', { value: 'updated', label: 'Field' }]])
+        records: new Map([['field1', { value: 'updated', label: 'Field' }]]),
       };
 
       const updatedFilledForm = {
@@ -274,18 +283,18 @@ describe('FilledFormService', () => {
         title: 'Updated Title',
         records: { field1: { value: 'updated', label: 'Field' } },
         created_at: new Date(),
-        updated_at: new Date()
+        updated_at: new Date(),
       };
 
       const formIdResult = {
-        form_id: '323e4567-e89b-12d3-a456-426614174000'
+        form_id: '323e4567-e89b-12d3-a456-426614174000',
       };
 
       const formVersion = {
         id: updatedFilledForm.form_version_id,
         form_id: formIdResult.form_id,
         version_number: 1,
-        is_active: true
+        is_active: true,
       };
 
       mockClient.query
@@ -322,12 +331,12 @@ describe('FilledFormService', () => {
       // Arrange
       const filledFormId = '123e4567-e89b-12d3-a456-426614174000';
       const deletedFilledForm = {
-        id: filledFormId
+        id: filledFormId,
       };
 
       mockClient.query.mockResolvedValueOnce({
         rows: [deletedFilledForm],
-        rowCount: 1
+        rowCount: 1,
       });
 
       // Act
@@ -336,7 +345,7 @@ describe('FilledFormService', () => {
       // Assert
       expect(mockClient.query).toHaveBeenCalledTimes(1);
       expect(result).toEqual({
-        message: `Filled form with ID: (${filledFormId}) has deleted successfully!`
+        message: `Filled form with ID: (${filledFormId}) has deleted successfully!`,
       });
     });
 
@@ -346,7 +355,7 @@ describe('FilledFormService', () => {
 
       mockClient.query.mockResolvedValueOnce({
         rows: [],
-        rowCount: 0
+        rowCount: 0,
       });
 
       // Act & Assert
@@ -355,7 +364,9 @@ describe('FilledFormService', () => {
         fail('Should have thrown NotFoundException');
       } catch (error) {
         expect(error).toBeInstanceOf(NotFoundException);
-        expect(error.message).toBe(`Filled form with ID ${filledFormId} not found.`);
+        expect(error.message).toBe(
+          `Filled form with ID ${filledFormId} not found.`,
+        );
       }
     });
   });
@@ -372,8 +383,8 @@ describe('FilledFormService', () => {
           shape_name: 'Cancha de Futbol',
           municipality_name: 'San juan de los morros',
           parrish_name: 'Juan german Roscio',
-          snippet: 'pozo artesanal...'
-        }
+          snippet: 'pozo artesanal...',
+        },
       ];
 
       mockClient.query
@@ -389,7 +400,10 @@ describe('FilledFormService', () => {
       expect(result[0]).toHaveProperty('id', 'ff_1');
       expect(result[0]).toHaveProperty('snippet');
       expect(result[0]).toHaveProperty('shape_name', 'Cancha de Futbol');
-      expect(result[0]).toHaveProperty('municipality_name', 'San juan de los morros');
+      expect(result[0]).toHaveProperty(
+        'municipality_name',
+        'San juan de los morros',
+      );
       expect(result[0]).toHaveProperty('parrish_name', 'Juan german Roscio');
     });
 
@@ -404,8 +418,8 @@ describe('FilledFormService', () => {
           shape_name: 'Pozo principal',
           municipality_name: 'Municipio X',
           parrish_name: 'Parroquia Y',
-          snippet: 'Pozo comunitario en...'
-        }
+          snippet: 'Pozo comunitario en...',
+        },
       ];
 
       mockClient.query
@@ -425,4 +439,3 @@ describe('FilledFormService', () => {
     });
   });
 });
-

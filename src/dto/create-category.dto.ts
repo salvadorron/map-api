@@ -1,26 +1,26 @@
-import { IsOptional, IsString, IsUUID } from "class-validator";
+import { IsOptional, IsString, IsUUID } from 'class-validator';
 
 export class CreateCategoryDto {
-    @IsString({ message: 'name is required.' })
-    name: string
+  @IsString({ message: 'name is required.' })
+  name: string;
 
-    @IsOptional()
-    @IsString()
-    icon?: string
+  @IsOptional()
+  @IsString()
+  icon?: string;
 
-    @IsOptional()
-    @IsString()
-    color?: string
+  @IsOptional()
+  @IsString()
+  color?: string;
 
-    @IsOptional()
-    @IsUUID('4', { message: 'institution_id must be a valid UUID.' })
-    institution_id?: string
+  @IsOptional()
+  @IsUUID('4', { message: 'institution_id must be a valid UUID.' })
+  institution_id?: string;
 
-    @IsOptional()
-    @IsUUID('4', { message: 'parent_id must be a valid UUID.' })
-    parent_id?: string
+  @IsOptional()
+  @IsUUID('4', { message: 'parent_id must be a valid UUID.' })
+  parent_id?: string;
 
-    @IsOptional()
-    @IsString()
-    element_type?: string
+  @IsOptional()
+  @IsString()
+  element_type?: string;
 }

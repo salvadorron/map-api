@@ -6,5 +6,4 @@ import { PgService } from './pg-config.service';
   providers: [PgService],
   exports: [PgService],
 })
-
-export class PgConfigModule { }
+export class PgConfigModule {}

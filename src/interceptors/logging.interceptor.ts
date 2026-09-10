@@ -25,7 +25,6 @@ export class LoggingInterceptor implements NestInterceptor {
     const request = context.switchToHttp().getRequest<Request>();
     const { method, url, body, params, ip, headers } = request;
 
-
     // Excluir el endpoint de logs para evitar registros recursivos
     if (url.startsWith('/logs')) {
       return next.handle();
@@ -44,7 +43,7 @@ export class LoggingInterceptor implements NestInterceptor {
 
     // Determinar el tipo de recurso desde la URL
     const resourceType = this.getResourceTypeFromUrl(url);
-    
+
     // Determinar la acción basada en el método HTTP
     const action = this.getActionFromMethod(method);
 
@@ -53,7 +52,7 @@ export class LoggingInterceptor implements NestInterceptor {
     if (action === 'view') {
       return next.handle();
     }
-    
+
     // Obtener el ID del recurso si existe
     const resourceId = params?.id || body?.id || null;
 
@@ -61,7 +60,8 @@ export class LoggingInterceptor implements NestInterceptor {
     const forwardedFor = headers['x-forwarded-for'];
     const realIp = headers['x-real-ip'];
     const ipAddress = this.normalizeIpAddress(ip, forwardedFor, realIp);
-    const userAgent = typeof headers['user-agent'] === 'string' ? headers['user-agent'] : null;
+    const userAgent =
+      typeof headers['user-agent'] === 'string' ? headers['user-agent'] : null;
 
     // No almacenamos payloads completos para evitar llenar el storage.
     // Guardamos solo metadatos mínimos en la tabla de logs.
@@ -90,7 +90,7 @@ export class LoggingInterceptor implements NestInterceptor {
             }
 
             // Si es login, tratar de extraer el user desde la respuesta
-            const logUserId = isAuthLogin ? (res?.user?.id || userId) : userId;
+            const logUserId = isAuthLogin ? res?.user?.id || userId : userId;
             // No guardar `details` para login (confidencial)
             const logDetails = isAuthLogin ? null : body;
 
@@ -99,7 +99,7 @@ export class LoggingInterceptor implements NestInterceptor {
               resource_type: resourceType,
               resource_id: resourceId,
               user_id: logUserId,
-              details: logDetails as any,
+              details: logDetails,
               ip_address: ipAddress,
               user_agent: userAgent,
             });
@@ -111,7 +111,9 @@ export class LoggingInterceptor implements NestInterceptor {
           try {
             if (!this.logService) return;
             // No guardar `details` para login errors
-            const errorDetails: any = isAuthLogin ? null : { error: err?.message };
+            const errorDetails: any = isAuthLogin
+              ? null
+              : { error: err?.message };
             await this.logService.create({
               action: `${action}_ERROR`,
               resource_type: resourceType,
@@ -164,7 +166,7 @@ export class LoggingInterceptor implements NestInterceptor {
   private normalizeIpAddress(
     ip: string | undefined,
     forwardedFor: string | string[] | undefined,
-    realIp: string | string[] | undefined
+    realIp: string | string[] | undefined,
   ): string | null {
     // Prioridad: ip directo > x-real-ip > x-forwarded-for
     if (ip) {
@@ -177,11 +179,12 @@ export class LoggingInterceptor implements NestInterceptor {
 
     if (forwardedFor) {
       // x-forwarded-for puede contener múltiples IPs separadas por coma
-      const ipString = Array.isArray(forwardedFor) ? forwardedFor[0] : forwardedFor;
+      const ipString = Array.isArray(forwardedFor)
+        ? forwardedFor[0]
+        : forwardedFor;
       return ipString.split(',')[0].trim();
     }
 
     return null;
   }
 }
-

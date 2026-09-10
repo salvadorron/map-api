@@ -47,7 +47,7 @@ describe('InstitutionService', () => {
       // Arrange
       const createInstitutionDto = {
         code: 'INST001',
-        name: 'Test Institution'
+        name: 'Test Institution',
       };
 
       const expectedInstitution = {
@@ -55,12 +55,12 @@ describe('InstitutionService', () => {
         code: 'INST001',
         name: 'Test Institution',
         created_at: new Date(),
-        updated_at: new Date()
+        updated_at: new Date(),
       };
 
       mockClient.query.mockResolvedValueOnce({
         rows: [expectedInstitution],
-        rowCount: 1
+        rowCount: 1,
       });
 
       // Act
@@ -81,20 +81,20 @@ describe('InstitutionService', () => {
           code: 'INST001',
           name: 'Institution A',
           created_at: new Date(),
-          updated_at: new Date()
+          updated_at: new Date(),
         },
         {
           id: '223e4567-e89b-12d3-a456-426614174000',
           code: 'INST002',
           name: 'Institution B',
           created_at: new Date(),
-          updated_at: new Date()
-        }
+          updated_at: new Date(),
+        },
       ];
 
       mockClient.query.mockResolvedValueOnce({
         rows: expectedInstitutions,
-        rowCount: 2
+        rowCount: 2,
       });
 
       // Act
@@ -115,12 +115,12 @@ describe('InstitutionService', () => {
         code: 'INST001',
         name: 'Test Institution',
         created_at: new Date(),
-        updated_at: new Date()
+        updated_at: new Date(),
       };
 
       mockClient.query.mockResolvedValueOnce({
         rows: [expectedInstitution],
-        rowCount: 1
+        rowCount: 1,
       });
 
       // Act
@@ -137,7 +137,7 @@ describe('InstitutionService', () => {
 
       mockClient.query.mockResolvedValueOnce({
         rows: [],
-        rowCount: 0
+        rowCount: 0,
       });
 
       // Act & Assert
@@ -146,7 +146,9 @@ describe('InstitutionService', () => {
         fail('Should have thrown NotFoundException');
       } catch (error) {
         expect(error).toBeInstanceOf(NotFoundException);
-        expect(error.message).toBe(`Institución con id ${institutionId} no encontrada`);
+        expect(error.message).toBe(
+          `Institución con id ${institutionId} no encontrada`,
+        );
       }
     });
   });
@@ -160,12 +162,12 @@ describe('InstitutionService', () => {
         code: 'INST001',
         name: 'Test Institution',
         created_at: new Date(),
-        updated_at: new Date()
+        updated_at: new Date(),
       };
 
       mockClient.query.mockResolvedValueOnce({
         rows: [expectedInstitution],
-        rowCount: 1
+        rowCount: 1,
       });
 
       // Act
@@ -182,7 +184,7 @@ describe('InstitutionService', () => {
 
       mockClient.query.mockResolvedValueOnce({
         rows: [],
-        rowCount: 0
+        rowCount: 0,
       });
 
       // Act
@@ -200,7 +202,7 @@ describe('InstitutionService', () => {
       const institutionId = '123e4567-e89b-12d3-a456-426614174000';
       const updateInstitutionDto = {
         name: 'Updated Institution',
-        code: 'INST001-UPDATED'
+        code: 'INST001-UPDATED',
       };
 
       const expectedInstitution = {
@@ -208,12 +210,12 @@ describe('InstitutionService', () => {
         code: 'INST001-UPDATED',
         name: 'Updated Institution',
         created_at: new Date(),
-        updated_at: new Date()
+        updated_at: new Date(),
       };
 
       mockClient.query.mockResolvedValueOnce({
         rows: [expectedInstitution],
-        rowCount: 1
+        rowCount: 1,
       });
 
       // Act
@@ -235,7 +237,9 @@ describe('InstitutionService', () => {
         fail('Should have thrown BadRequestException');
       } catch (error) {
         expect(error).toBeInstanceOf(BadRequestException);
-        expect(error.message).toBe('Debe haber al menos una propiedad para actualizar');
+        expect(error.message).toBe(
+          'Debe haber al menos una propiedad para actualizar',
+        );
       }
     });
 
@@ -243,12 +247,12 @@ describe('InstitutionService', () => {
       // Arrange
       const institutionId = '123e4567-e89b-12d3-a456-426614174000';
       const updateInstitutionDto = {
-        name: 'Updated Name'
+        name: 'Updated Name',
       };
 
       mockClient.query.mockResolvedValueOnce({
         rows: [],
-        rowCount: 0
+        rowCount: 0,
       });
 
       // Act & Assert
@@ -257,7 +261,9 @@ describe('InstitutionService', () => {
         fail('Should have thrown NotFoundException');
       } catch (error) {
         expect(error).toBeInstanceOf(NotFoundException);
-        expect(error.message).toBe(`Institución con ID ${institutionId} no encontrada.`);
+        expect(error.message).toBe(
+          `Institución con ID ${institutionId} no encontrada.`,
+        );
       }
     });
   });
@@ -267,12 +273,12 @@ describe('InstitutionService', () => {
       // Arrange
       const institutionId = '123e4567-e89b-12d3-a456-426614174000';
       const deletedInstitution = {
-        id: institutionId
+        id: institutionId,
       };
 
       mockClient.query.mockResolvedValueOnce({
         rows: [deletedInstitution],
-        rowCount: 1
+        rowCount: 1,
       });
 
       // Act
@@ -281,7 +287,7 @@ describe('InstitutionService', () => {
       // Assert
       expect(mockClient.query).toHaveBeenCalledTimes(1);
       expect(result).toEqual({
-        message: `Institución con ID: (${institutionId}) ha sido eliminada exitosamente!`
+        message: `Institución con ID: (${institutionId}) ha sido eliminada exitosamente!`,
       });
     });
 
@@ -291,7 +297,7 @@ describe('InstitutionService', () => {
 
       mockClient.query.mockResolvedValueOnce({
         rows: [],
-        rowCount: 0
+        rowCount: 0,
       });
 
       // Act & Assert

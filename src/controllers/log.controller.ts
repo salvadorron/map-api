@@ -11,4 +11,3 @@ export class LogController {
     return this.logService.findAll(filters);
   }
 }
-

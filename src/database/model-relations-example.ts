@@ -1,6 +1,6 @@
 /**
  * EJEMPLO DE USO DE RELACIONES EN MODEL
- * 
+ *
  * Este archivo muestra cómo usar las relaciones en el Model.
  * NO es código de producción, solo ejemplos.
  */
@@ -18,9 +18,17 @@ import { Shape } from '../entities/shape.entity';
 // ============================================
 
 // Un FilledForm pertenece a un FormVersion
-function setupFilledFormRelations(filledFormModel: Model<FilledForm>, formVersionModel: Model<FormVersion>) {
-  filledFormModel.belongsTo('formVersion', formVersionModel, 'form_version_id', 'id');
-  
+function setupFilledFormRelations(
+  filledFormModel: Model<FilledForm>,
+  formVersionModel: Model<FormVersion>,
+) {
+  filledFormModel.belongsTo(
+    'formVersion',
+    formVersionModel,
+    'form_version_id',
+    'id',
+  );
+
   // Uso:
   // const filledForm = await filledFormModel.findOne({
   //   where: { id: 'some-id' },
@@ -34,9 +42,12 @@ function setupFilledFormRelations(filledFormModel: Model<FilledForm>, formVersio
 // ============================================
 
 // Un Form tiene muchos FormVersions
-function setupFormRelations(formModel: Model<Form>, formVersionModel: Model<FormVersion>) {
+function setupFormRelations(
+  formModel: Model<Form>,
+  formVersionModel: Model<FormVersion>,
+) {
   formModel.hasMany('versions', formVersionModel, 'form_id', 'id');
-  
+
   // Uso:
   // const form = await formModel.findOne({
   //   where: { id: 'some-id' },
@@ -50,17 +61,20 @@ function setupFormRelations(formModel: Model<Form>, formVersionModel: Model<Form
 // ============================================
 
 // Un Shape tiene muchas Categories a través de shapes_categories
-function setupShapeRelations(shapeModel: Model<Shape>, categoryModel: Model<Category>) {
+function setupShapeRelations(
+  shapeModel: Model<Shape>,
+  categoryModel: Model<Category>,
+) {
   shapeModel.belongsToMany(
-    'categories',           // nombre de la relación
-    categoryModel,          // modelo relacionado
-    'shapes_categories',    // tabla intermedia
-    'shape_id',             // foreignKey en tabla intermedia (apunta a shapes)
-    'category_id',           // otherKey en tabla intermedia (apunta a categories)
-    'id',                    // localKey en shapes (por defecto 'id')
-    'id'                     // otherLocalKey en categories (por defecto 'id')
+    'categories', // nombre de la relación
+    categoryModel, // modelo relacionado
+    'shapes_categories', // tabla intermedia
+    'shape_id', // foreignKey en tabla intermedia (apunta a shapes)
+    'category_id', // otherKey en tabla intermedia (apunta a categories)
+    'id', // localKey en shapes (por defecto 'id')
+    'id', // otherLocalKey en categories (por defecto 'id')
   );
-  
+
   // Uso:
   // const shape = await shapeModel.findOne({
   //   where: { id: 'some-id' },
@@ -77,7 +91,7 @@ function setupShapeRelations(shapeModel: Model<Shape>, categoryModel: Model<Cate
 function setupCategoryRelations(categoryModel: Model<Category>) {
   categoryModel.belongsTo('parent', categoryModel, 'parent_id', 'id');
   categoryModel.hasMany('children', categoryModel, 'parent_id', 'id');
-  
+
   // Uso:
   // const category = await categoryModel.findOne({
   //   where: { id: 'some-id' },
@@ -112,26 +126,30 @@ export class ExampleService {
 
   private setupRelations() {
     // FilledForm -> FormVersion (belongsTo)
-    this.filledFormModel.belongsTo('formVersion', this.formVersionModel, 'form_version_id');
-    
+    this.filledFormModel.belongsTo(
+      'formVersion',
+      this.formVersionModel,
+      'form_version_id',
+    );
+
     // FormVersion -> Form (belongsTo)
     this.formVersionModel.belongsTo('form', this.formModel, 'form_id');
-    
+
     // Form -> FormVersions (hasMany)
     this.formModel.hasMany('versions', this.formVersionModel, 'form_id');
-    
+
     // Shape -> Categories (belongsToMany)
     this.shapeModel.belongsToMany(
       'categories',
       this.categoryModel,
       'shapes_categories',
       'shape_id',
-      'category_id'
+      'category_id',
     );
-    
+
     // Category -> Parent (belongsTo)
     this.categoryModel.belongsTo('parent', this.categoryModel, 'parent_id');
-    
+
     // Category -> Children (hasMany)
     this.categoryModel.hasMany('children', this.categoryModel, 'parent_id');
   }
@@ -140,7 +158,7 @@ export class ExampleService {
   async getFilledFormWithRelations(id: string) {
     const filledForm = await this.filledFormModel.findOne({
       where: { id },
-      include: ['formVersion'] // Carga formVersion
+      include: ['formVersion'], // Carga formVersion
     });
 
     if (!filledForm) return null;
@@ -148,15 +166,15 @@ export class ExampleService {
     // Cargar el form del formVersion
     const formVersion = await this.formVersionModel.findOne({
       where: { id: filledForm.form_version_id },
-      include: ['form'] // Carga el form relacionado
+      include: ['form'], // Carga el form relacionado
     });
 
     return {
       ...filledForm,
       formVersion: {
         form_version_id: filledForm.form_version_id,
-        form: formVersion?.form_id
-      }
+        form: formVersion?.form_id,
+      },
     };
   }
 
@@ -164,14 +182,14 @@ export class ExampleService {
   async getShapeWithCategories(id: string) {
     return await this.shapeModel.findOne({
       where: { id },
-      include: ['categories'] // Carga todas las categories relacionadas
+      include: ['categories'], // Carga todas las categories relacionadas
     });
   }
 
   // Ejemplo: Obtener todas las categories con sus parents y children
   async getCategoriesWithRelations() {
     return await this.categoryModel.findAll({
-      include: ['parent', 'children']
+      include: ['parent', 'children'],
     });
   }
 }

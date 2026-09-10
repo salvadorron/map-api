@@ -19,8 +19,15 @@ export class CategoryModel extends BaseModel<Category> {
 
   protected initializeRelations(): void {
     // Crear modelos relacionados internamente
-    this.institutionModel = new Model<Institution>('institutions', this.pgService);
-    this.institutionCategoryAssignmentModel = new Model<InstitutionCategoryAssignment>('institution_category_assignment', this.pgService);
+    this.institutionModel = new Model<Institution>(
+      'institutions',
+      this.pgService,
+    );
+    this.institutionCategoryAssignmentModel =
+      new Model<InstitutionCategoryAssignment>(
+        'institution_category_assignment',
+        this.pgService,
+      );
 
     // Definir relaciones - se ejecuta automáticamente
     // Auto-referencia: categoría puede tener una categoría padre
@@ -33,7 +40,7 @@ export class CategoryModel extends BaseModel<Category> {
       this.institutionModel,
       'institution_category_assignment',
       'category_id',
-      'institution_id'
+      'institution_id',
     );
   }
 

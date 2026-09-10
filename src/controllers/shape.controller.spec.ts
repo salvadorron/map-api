@@ -44,19 +44,19 @@ describe('ShapeController', () => {
     const createShapeDto = {
       category_ids: [
         '123e4567-e89b-12d3-a456-426614174000',
-        '223e4567-e89b-12d3-a456-426614174000'
+        '223e4567-e89b-12d3-a456-426614174000',
       ],
       properties: {
         cod_mun: '001',
         cod_prq: '001',
-        name: 'Test Shape'
+        name: 'Test Shape',
       },
       status: 'PENDING',
       geom: {
         type: 'Point',
-        coordinates: [-66.9, 10.5]
+        coordinates: [-66.9, 10.5],
       } as Geometry,
-      institution_id: '323e4567-e89b-12d3-a456-426614174000'
+      institution_id: '323e4567-e89b-12d3-a456-426614174000',
     };
 
     // Preparar la respuesta esperada del servicio (GeoJSON Feature)
@@ -64,7 +64,7 @@ describe('ShapeController', () => {
       type: 'Feature',
       geometry: {
         type: 'Point',
-        coordinates: [-66.9, 10.5]
+        coordinates: [-66.9, 10.5],
       },
       properties: {
         id: '423e4567-e89b-12d3-a456-426614174000',
@@ -76,18 +76,18 @@ describe('ShapeController', () => {
             id: '123e4567-e89b-12d3-a456-426614174000',
             name: 'Category 1',
             icon: 'icon1',
-            color: '#000000'
+            color: '#000000',
           },
           {
             id: '223e4567-e89b-12d3-a456-426614174000',
             name: 'Category 2',
             icon: 'icon2',
-            color: '#FFFFFF'
-          }
+            color: '#FFFFFF',
+          },
         ],
         created_at: new Date(),
-        updated_at: new Date()
-      }
+        updated_at: new Date(),
+      },
     };
 
     // Configurar el mock del servicio
@@ -114,7 +114,7 @@ describe('ShapeController', () => {
     const filters = {
       status: 'APPROVED',
       municipality: '001',
-      category: '123e4567-e89b-12d3-a456-426614174000'
+      category: '123e4567-e89b-12d3-a456-426614174000',
     };
 
     // Preparar la respuesta esperada del servicio
@@ -123,7 +123,7 @@ describe('ShapeController', () => {
         type: 'Feature',
         geometry: {
           type: 'Point',
-          coordinates: [-66.9, 10.5]
+          coordinates: [-66.9, 10.5],
         },
         properties: {
           id: '423e4567-e89b-12d3-a456-426614174000',
@@ -133,14 +133,22 @@ describe('ShapeController', () => {
           status: 'APPROVED',
           categories: [],
           created_at: new Date(),
-          updated_at: new Date()
-        }
+          updated_at: new Date(),
+        },
       },
       {
         type: 'Feature',
         geometry: {
           type: 'Polygon',
-          coordinates: [[[-66.9, 10.5], [-66.8, 10.5], [-66.8, 10.6], [-66.9, 10.6], [-66.9, 10.5]]]
+          coordinates: [
+            [
+              [-66.9, 10.5],
+              [-66.8, 10.5],
+              [-66.8, 10.6],
+              [-66.9, 10.6],
+              [-66.9, 10.5],
+            ],
+          ],
         },
         properties: {
           id: '523e4567-e89b-12d3-a456-426614174000',
@@ -150,9 +158,9 @@ describe('ShapeController', () => {
           status: 'APPROVED',
           categories: [],
           created_at: new Date(),
-          updated_at: new Date()
-        }
-      }
+          updated_at: new Date(),
+        },
+      },
     ];
 
     // Configurar el mock del servicio
@@ -180,7 +188,7 @@ describe('ShapeController', () => {
         type: 'Feature',
         geometry: {
           type: 'Point',
-          coordinates: [-66.9, 10.5]
+          coordinates: [-66.9, 10.5],
         },
         properties: {
           id: '423e4567-e89b-12d3-a456-426614174000',
@@ -188,9 +196,9 @@ describe('ShapeController', () => {
           status: 'APPROVED',
           categories: [],
           created_at: new Date(),
-          updated_at: new Date()
-        }
-      }
+          updated_at: new Date(),
+        },
+      },
     ];
 
     // Configurar el mock del servicio
@@ -217,7 +225,7 @@ describe('ShapeController', () => {
       type: 'Feature',
       geometry: {
         type: 'Point',
-        coordinates: [-66.9, 10.5]
+        coordinates: [-66.9, 10.5],
       },
       properties: {
         id: shapeId,
@@ -230,12 +238,12 @@ describe('ShapeController', () => {
             id: '123e4567-e89b-12d3-a456-426614174000',
             name: 'Category 1',
             icon: 'icon1',
-            color: '#000000'
-          }
+            color: '#000000',
+          },
         ],
         created_at: new Date(),
-        updated_at: new Date()
-      }
+        updated_at: new Date(),
+      },
     };
 
     // Configurar el mock del servicio
@@ -263,9 +271,9 @@ describe('ShapeController', () => {
       status: 'APPROVED',
       properties: {
         name: 'Updated Shape Name',
-        cod_mun: '002'
+        cod_mun: '002',
       },
-      category_ids: ['323e4567-e89b-12d3-a456-426614174000']
+      category_ids: ['323e4567-e89b-12d3-a456-426614174000'],
     };
 
     // Preparar la respuesta esperada del servicio
@@ -273,7 +281,7 @@ describe('ShapeController', () => {
       type: 'Feature',
       geometry: {
         type: 'Point',
-        coordinates: [-66.9, 10.5]
+        coordinates: [-66.9, 10.5],
       },
       properties: {
         id: shapeId,
@@ -285,12 +293,12 @@ describe('ShapeController', () => {
             id: '323e4567-e89b-12d3-a456-426614174000',
             name: 'Updated Category',
             icon: 'icon3',
-            color: '#FF0000'
-          }
+            color: '#FF0000',
+          },
         ],
         created_at: new Date(),
-        updated_at: new Date()
-      }
+        updated_at: new Date(),
+      },
     };
 
     // Configurar el mock del servicio
@@ -300,7 +308,10 @@ describe('ShapeController', () => {
     const result = await controller.update(shapeId, updateShapeDto);
 
     // Assert: Verificar que el servicio fue llamado correctamente
-    expect(mockShapeService.update).toHaveBeenCalledWith(shapeId, updateShapeDto);
+    expect(mockShapeService.update).toHaveBeenCalledWith(
+      shapeId,
+      updateShapeDto,
+    );
     expect(mockShapeService.update).toHaveBeenCalledTimes(1);
 
     // Verificar que el resultado es el esperado
@@ -317,7 +328,7 @@ describe('ShapeController', () => {
 
     // Preparar la respuesta esperada del servicio
     const expectedResponse = {
-      message: `Shape with ID: (${shapeId}) has deleted successfully!`
+      message: `Shape with ID: (${shapeId}) has deleted successfully!`,
     };
 
     // Configurar el mock del servicio

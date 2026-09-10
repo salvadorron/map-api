@@ -1,35 +1,41 @@
-import { MiddlewareConsumer, Module, RequestMethod, ValidationPipe } from "@nestjs/common";
-import { ConfigModule } from "@nestjs/config";
-import { PgConfigModule } from "src/database/pg-config.module";
-import { ShapeModule } from "./shape.module";
-import { CategoryModule } from "./category.module";
-import { FormModule } from "./form.module";
-import { FilledFormModule } from "./filled_form.module";
-import { MunicipalityModule } from "./municipality.module";
-import { ParrishModule } from "./parrish.module";
-import { APP_PIPE, APP_INTERCEPTOR } from "@nestjs/core";
+import {
+  MiddlewareConsumer,
+  Module,
+  RequestMethod,
+  ValidationPipe,
+} from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
+import { PgConfigModule } from 'src/database/pg-config.module';
+import { ShapeModule } from './shape.module';
+import { ShapeImageModule } from './shape-image.module';
+import { CategoryModule } from './category.module';
+import { FormModule } from './form.module';
+import { FilledFormModule } from './filled_form.module';
+import { MunicipalityModule } from './municipality.module';
+import { ParrishModule } from './parrish.module';
+import { APP_PIPE, APP_INTERCEPTOR } from '@nestjs/core';
 import { UsersModule } from './users.module';
 import { AuthModule } from './auth.module';
 import { InstitutionModule } from './institution.module';
 import { LogModule } from './log.module';
-import { AsyncLocalStorage } from "async_hooks";
-import { AuthMiddleware } from "src/middlewares/auth.middleware";
-import { AlsModule } from "./als.module";
-import { AuthMiddlewareModule } from "./auth-middleware.module";
-import { ModuleRef } from "@nestjs/core";
+import { AsyncLocalStorage } from 'async_hooks';
+import { AuthMiddleware } from 'src/middlewares/auth.middleware';
+import { AlsModule } from './als.module';
+import { AuthMiddlewareModule } from './auth-middleware.module';
+import { ModuleRef } from '@nestjs/core';
 import { ReportsModule } from './reports.module';
-import { LoggingInterceptor } from "src/interceptors/logging.interceptor";
-import { HealthModule } from "./health.module";
+import { LoggingInterceptor } from 'src/interceptors/logging.interceptor';
+import { HealthModule } from './health.module';
 import { UploadModule } from './upload.module';
-
 
 @Module({
   imports: [
     ConfigModule.forRoot({
-      isGlobal: true
+      isGlobal: true,
     }),
     PgConfigModule,
     ShapeModule,
+    ShapeImageModule,
     CategoryModule,
     FormModule,
     FilledFormModule,
@@ -49,23 +55,25 @@ import { UploadModule } from './upload.module';
   providers: [
     {
       provide: APP_PIPE,
-      useClass: ValidationPipe
+      useClass: ValidationPipe,
     },
     {
       provide: APP_INTERCEPTOR,
       useFactory: (moduleRef: ModuleRef) => {
-        const als = moduleRef.get(AsyncLocalStorage<AlsStore>, { strict: false });
+        const als = moduleRef.get(AsyncLocalStorage<AlsStore>, {
+          strict: false,
+        });
         return new LoggingInterceptor(moduleRef, als);
       },
       inject: [ModuleRef],
-    }
+    },
   ],
 })
 export class AppModule {
   constructor(
     private readonly als: AsyncLocalStorage<AlsStore>,
     private readonly moduleRef: ModuleRef,
-  ) { }
+  ) {}
 
   configure(consumer: MiddlewareConsumer) {
     consumer
@@ -81,10 +89,12 @@ export class AppModule {
         this.als.run(store, () => next());
       })
       .forRoutes({ path: '*', method: RequestMethod.ALL });
-    
+
     consumer
       .apply(async (req, res, next) => {
-        const authMiddleware = this.moduleRef.get(AuthMiddleware, { strict: false });
+        const authMiddleware = this.moduleRef.get(AuthMiddleware, {
+          strict: false,
+        });
         return authMiddleware.use(req, res, next);
       })
       .exclude(

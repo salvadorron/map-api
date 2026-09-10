@@ -10,7 +10,10 @@ export class ReportsController {
   @Get('categories')
   async categories(@Query() filters: CategoryFilters, @Res() res: Response) {
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', 'attachment; filename="categories.pdf"');
+    res.setHeader(
+      'Content-Disposition',
+      'attachment; filename="categories.pdf"',
+    );
     await this.reportService.generateCategoriesPdf(filters, res);
   }
 

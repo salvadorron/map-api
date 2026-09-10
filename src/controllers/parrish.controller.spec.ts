@@ -41,7 +41,7 @@ describe('ParrishController', () => {
         code: '001',
         municipality_id: '223e4567-e89b-12d3-a456-426614174000',
         created_at: new Date(),
-        updated_at: new Date()
+        updated_at: new Date(),
       },
       {
         id: '323e4567-e89b-12d3-a456-426614174000',
@@ -49,7 +49,7 @@ describe('ParrishController', () => {
         code: '002',
         municipality_id: '223e4567-e89b-12d3-a456-426614174000',
         created_at: new Date(),
-        updated_at: new Date()
+        updated_at: new Date(),
       },
       {
         id: '423e4567-e89b-12d3-a456-426614174000',
@@ -57,8 +57,8 @@ describe('ParrishController', () => {
         code: '003',
         municipality_id: '523e4567-e89b-12d3-a456-426614174000',
         created_at: new Date(),
-        updated_at: new Date()
-      }
+        updated_at: new Date(),
+      },
     ];
 
     // Configurar el mock del servicio
@@ -75,7 +75,7 @@ describe('ParrishController', () => {
     expect(result).toBeDefined();
     expect(result).toEqual(expectedParrishes);
     expect(result).toHaveLength(3);
-    
+
     // Verificar que las parroquias tienen la estructura correcta
     expect(result[0]).toHaveProperty('id');
     expect(result[0]).toHaveProperty('name');
@@ -86,7 +86,7 @@ describe('ParrishController', () => {
   it('should find all parrishes with municipality filter', async () => {
     // Arrange: Preparar los filtros
     const filters = {
-      municipalityIds: '223e4567-e89b-12d3-a456-426614174000'
+      municipalityIds: '223e4567-e89b-12d3-a456-426614174000',
     };
 
     // Preparar la respuesta esperada del servicio
@@ -97,7 +97,7 @@ describe('ParrishController', () => {
         code: '001',
         municipality_id: '223e4567-e89b-12d3-a456-426614174000',
         created_at: new Date(),
-        updated_at: new Date()
+        updated_at: new Date(),
       },
       {
         id: '323e4567-e89b-12d3-a456-426614174000',
@@ -105,8 +105,8 @@ describe('ParrishController', () => {
         code: '002',
         municipality_id: '223e4567-e89b-12d3-a456-426614174000',
         created_at: new Date(),
-        updated_at: new Date()
-      }
+        updated_at: new Date(),
+      },
     ];
 
     // Configurar el mock del servicio
@@ -124,13 +124,18 @@ describe('ParrishController', () => {
     expect(result).toEqual(expectedParrishes);
     expect(result).toHaveLength(2);
     // Verificar que todas las parroquias pertenecen al municipio filtrado
-    expect(result.every(p => p.municipality_id === '223e4567-e89b-12d3-a456-426614174000')).toBe(true);
+    expect(
+      result.every(
+        (p) => p.municipality_id === '223e4567-e89b-12d3-a456-426614174000',
+      ),
+    ).toBe(true);
   });
 
   it('should find all parrishes with multiple municipality filters', async () => {
     // Arrange: Preparar los filtros con múltiples municipios
     const filters = {
-      municipalityIds: '223e4567-e89b-12d3-a456-426614174000,523e4567-e89b-12d3-a456-426614174000'
+      municipalityIds:
+        '223e4567-e89b-12d3-a456-426614174000,523e4567-e89b-12d3-a456-426614174000',
     };
 
     // Preparar la respuesta esperada del servicio
@@ -141,7 +146,7 @@ describe('ParrishController', () => {
         code: '001',
         municipality_id: '223e4567-e89b-12d3-a456-426614174000',
         created_at: new Date(),
-        updated_at: new Date()
+        updated_at: new Date(),
       },
       {
         id: '423e4567-e89b-12d3-a456-426614174000',
@@ -149,8 +154,8 @@ describe('ParrishController', () => {
         code: '003',
         municipality_id: '523e4567-e89b-12d3-a456-426614174000',
         created_at: new Date(),
-        updated_at: new Date()
-      }
+        updated_at: new Date(),
+      },
     ];
 
     // Configurar el mock del servicio
@@ -200,7 +205,7 @@ describe('ParrishController', () => {
       code: '001',
       municipality_id: '223e4567-e89b-12d3-a456-426614174000',
       created_at: new Date(),
-      updated_at: new Date()
+      updated_at: new Date(),
     };
 
     // Configurar el mock del servicio

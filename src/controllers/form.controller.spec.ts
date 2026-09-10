@@ -45,14 +45,14 @@ describe('FormController', () => {
       tag: 'test-tag',
       category_ids: [
         '123e4567-e89b-12d3-a456-426614174000',
-        '223e4567-e89b-12d3-a456-426614174000'
+        '223e4567-e89b-12d3-a456-426614174000',
       ],
       inputs: [
         {
           inputType: 'text',
           label: 'Test Input',
           placeholder: 'Enter text',
-          required: true
+          required: true,
         },
         {
           inputType: 'select',
@@ -60,10 +60,10 @@ describe('FormController', () => {
           required: false,
           options: [
             { value: 'option1', label: 'Option 1' },
-            { value: 'option2', label: 'Option 2' }
-          ]
-        }
-      ]
+            { value: 'option2', label: 'Option 2' },
+          ],
+        },
+      ],
     };
 
     // Preparar la respuesta esperada del servicio
@@ -72,7 +72,7 @@ describe('FormController', () => {
       title: 'Test Form',
       tag: 'test-tag',
       created_at: new Date(),
-      updated_at: new Date()
+      updated_at: new Date(),
     };
 
     // Configurar el mock del servicio
@@ -93,7 +93,8 @@ describe('FormController', () => {
   it('should find all forms', async () => {
     // Arrange: Preparar los filtros opcionales
     const filters = {
-      category_ids: '123e4567-e89b-12d3-a456-426614174000,223e4567-e89b-12d3-a456-426614174000'
+      category_ids:
+        '123e4567-e89b-12d3-a456-426614174000,223e4567-e89b-12d3-a456-426614174000',
     };
 
     // Preparar la respuesta esperada del servicio
@@ -108,8 +109,8 @@ describe('FormController', () => {
           id: '423e4567-e89b-12d3-a456-426614174000',
           version_number: 1,
           inputs: [],
-          is_active: true
-        }
+          is_active: true,
+        },
       },
       {
         id: '523e4567-e89b-12d3-a456-426614174000',
@@ -121,9 +122,9 @@ describe('FormController', () => {
           id: '623e4567-e89b-12d3-a456-426614174000',
           version_number: 1,
           inputs: [],
-          is_active: true
-        }
-      }
+          is_active: true,
+        },
+      },
     ];
 
     // Configurar el mock del servicio
@@ -155,9 +156,9 @@ describe('FormController', () => {
           id: '423e4567-e89b-12d3-a456-426614174000',
           version_number: 1,
           inputs: [],
-          is_active: true
-        }
-      }
+          is_active: true,
+        },
+      },
     ];
 
     // Configurar el mock del servicio
@@ -194,11 +195,11 @@ describe('FormController', () => {
             inputType: 'text',
             label: 'Test Input',
             placeholder: 'Enter text',
-            required: true
-          }
+            required: true,
+          },
         ],
-        is_active: true
-      }
+        is_active: true,
+      },
     };
 
     // Configurar el mock del servicio
@@ -222,7 +223,7 @@ describe('FormController', () => {
     const formId = '323e4567-e89b-12d3-a456-426614174000';
     const updateFormDto = {
       title: 'Updated Form Title',
-      tag: 'updated-tag'
+      tag: 'updated-tag',
     };
 
     // Preparar la respuesta esperada del servicio
@@ -231,7 +232,7 @@ describe('FormController', () => {
       title: 'Updated Form Title',
       tag: 'updated-tag',
       created_at: new Date(),
-      updated_at: new Date()
+      updated_at: new Date(),
     };
 
     // Configurar el mock del servicio
@@ -258,7 +259,7 @@ describe('FormController', () => {
 
     // Preparar la respuesta esperada del servicio
     const expectedResponse = {
-      message: `Form with ID: (${formId}) has deleted successfully!`
+      message: `Form with ID: (${formId}) has deleted successfully!`,
     };
 
     // Configurar el mock del servicio

@@ -52,7 +52,7 @@ describe('ParrishService', () => {
           code: '001',
           municipality_id: '223e4567-e89b-12d3-a456-426614174000',
           created_at: new Date(),
-          updated_at: new Date()
+          updated_at: new Date(),
         },
         {
           id: '323e4567-e89b-12d3-a456-426614174000',
@@ -60,13 +60,13 @@ describe('ParrishService', () => {
           code: '002',
           municipality_id: '223e4567-e89b-12d3-a456-426614174000',
           created_at: new Date(),
-          updated_at: new Date()
-        }
+          updated_at: new Date(),
+        },
       ];
 
       mockClient.query.mockResolvedValueOnce({
         rows: expectedParrishes,
-        rowCount: 2
+        rowCount: 2,
       });
 
       // Act
@@ -81,7 +81,7 @@ describe('ParrishService', () => {
     it('should find parrishes filtered by municipalityIds', async () => {
       // Arrange
       const filters = {
-        municipalityIds: '223e4567-e89b-12d3-a456-426614174000'
+        municipalityIds: '223e4567-e89b-12d3-a456-426614174000',
       };
 
       const expectedParrishes = [
@@ -91,13 +91,13 @@ describe('ParrishService', () => {
           code: '001',
           municipality_id: '223e4567-e89b-12d3-a456-426614174000',
           created_at: new Date(),
-          updated_at: new Date()
-        }
+          updated_at: new Date(),
+        },
       ];
 
       mockClient.query.mockResolvedValueOnce({
         rows: expectedParrishes,
-        rowCount: 1
+        rowCount: 1,
       });
 
       // Act
@@ -111,7 +111,8 @@ describe('ParrishService', () => {
     it('should find parrishes filtered by multiple municipalityIds', async () => {
       // Arrange
       const filters = {
-        municipalityIds: '223e4567-e89b-12d3-a456-426614174000,423e4567-e89b-12d3-a456-426614174000'
+        municipalityIds:
+          '223e4567-e89b-12d3-a456-426614174000,423e4567-e89b-12d3-a456-426614174000',
       };
 
       const expectedParrishes = [
@@ -120,20 +121,20 @@ describe('ParrishService', () => {
           name: 'Parrish A',
           municipality_id: '223e4567-e89b-12d3-a456-426614174000',
           created_at: new Date(),
-          updated_at: new Date()
+          updated_at: new Date(),
         },
         {
           id: '523e4567-e89b-12d3-a456-426614174000',
           name: 'Parrish C',
           municipality_id: '423e4567-e89b-12d3-a456-426614174000',
           created_at: new Date(),
-          updated_at: new Date()
-        }
+          updated_at: new Date(),
+        },
       ];
 
       mockClient.query.mockResolvedValueOnce({
         rows: expectedParrishes,
-        rowCount: 2
+        rowCount: 2,
       });
 
       // Act
@@ -147,7 +148,7 @@ describe('ParrishService', () => {
     it('should ignore municipalityIds filter when it contains ALL', async () => {
       // Arrange
       const filters = {
-        municipalityIds: 'ALL'
+        municipalityIds: 'ALL',
       };
 
       const expectedParrishes = [
@@ -155,13 +156,13 @@ describe('ParrishService', () => {
           id: '123e4567-e89b-12d3-a456-426614174000',
           name: 'Parrish A',
           created_at: new Date(),
-          updated_at: new Date()
-        }
+          updated_at: new Date(),
+        },
       ];
 
       mockClient.query.mockResolvedValueOnce({
         rows: expectedParrishes,
-        rowCount: 1
+        rowCount: 1,
       });
 
       // Act
@@ -176,7 +177,7 @@ describe('ParrishService', () => {
       // Arrange
       mockClient.query.mockResolvedValueOnce({
         rows: [],
-        rowCount: 0
+        rowCount: 0,
       });
 
       // Act
@@ -198,12 +199,12 @@ describe('ParrishService', () => {
         code: '001',
         municipality_id: '223e4567-e89b-12d3-a456-426614174000',
         created_at: new Date(),
-        updated_at: new Date()
+        updated_at: new Date(),
       };
 
       mockClient.query.mockResolvedValueOnce({
         rows: [expectedParrish],
-        rowCount: 1
+        rowCount: 1,
       });
 
       // Act
@@ -220,7 +221,7 @@ describe('ParrishService', () => {
 
       mockClient.query.mockResolvedValueOnce({
         rows: [],
-        rowCount: 0
+        rowCount: 0,
       });
 
       // Act & Assert

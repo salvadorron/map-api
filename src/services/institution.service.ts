@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { Model } from 'src/database/model.config';
 import { PgService } from 'src/database/pg-config.service';
 import { CreateInstitutionDto } from 'src/dto/create-institution.dto';
@@ -20,7 +24,7 @@ export class InstitutionService {
     const institution = await this._institutionModel.create({
       id: institutionId.getValue(),
       code: createInstitutionDto.code,
-      name: createInstitutionDto.name
+      name: createInstitutionDto.name,
     });
     return institution;
   }
@@ -32,8 +36,8 @@ export class InstitutionService {
 
   async findOne(id: string) {
     const institutionId = UUID.fromString(id);
-    const institution = await this._institutionModel.findOne({ 
-      where: { id: institutionId.getValue() } 
+    const institution = await this._institutionModel.findOne({
+      where: { id: institutionId.getValue() },
     });
     if (!institution) {
       throw new NotFoundException(`Institución con id ${id} no encontrada`);
@@ -42,8 +46,8 @@ export class InstitutionService {
   }
 
   async findByCode(code: string) {
-    const institution = await this._institutionModel.findOne({ 
-      where: { code } 
+    const institution = await this._institutionModel.findOne({
+      where: { code },
     });
     return institution || null;
   }
@@ -53,25 +57,25 @@ export class InstitutionService {
     const updateData: Partial<Institution> = {};
 
     if (Object.keys(updateInstitutionDto).length === 0) {
-      throw new BadRequestException('Debe haber al menos una propiedad para actualizar');
+      throw new BadRequestException(
+        'Debe haber al menos una propiedad para actualizar',
+      );
     }
 
-
-    if(updateData.id){
+    if (updateData.id) {
       updateData.id = institutionId.getValue();
     }
-    
-    if(updateData.code) {
+
+    if (updateData.code) {
       updateData.code = updateInstitutionDto.code;
     }
 
-    if(updateData.name) {
+    if (updateData.name) {
       updateData.name = updateInstitutionDto.name;
     }
 
-    
-    const institution = await this._institutionModel.update(updateData, { 
-      where: { id: institutionId.getValue() } 
+    const institution = await this._institutionModel.update(updateData, {
+      where: { id: institutionId.getValue() },
     });
 
     if (!institution) {
@@ -83,14 +87,16 @@ export class InstitutionService {
 
   async remove(id: string) {
     const institutionId = UUID.fromString(id);
-    const deletedInstitution = await this._institutionModel.delete({ 
-      where: { id: institutionId.getValue() } 
+    const deletedInstitution = await this._institutionModel.delete({
+      where: { id: institutionId.getValue() },
     });
 
     if (!deletedInstitution) {
       throw new NotFoundException('Institución no encontrada');
     }
 
-    return { message: `Institución con ID: (${deletedInstitution.id}) ha sido eliminada exitosamente!` };
+    return {
+      message: `Institución con ID: (${deletedInstitution.id}) ha sido eliminada exitosamente!`,
+    };
   }
 }

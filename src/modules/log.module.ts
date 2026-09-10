@@ -11,4 +11,3 @@ import { AlsModule } from './als.module';
   exports: [LogService, LoggingInterceptor],
 })
 export class LogModule {}
-

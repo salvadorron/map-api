@@ -9,4 +9,3 @@ export class AuthResponseDto {
     institution_id?: string | null;
   };
 }
-

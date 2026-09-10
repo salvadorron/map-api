@@ -42,7 +42,7 @@ describe('LogController', () => {
         details: { name: 'Test Category' },
         ip_address: '192.168.1.1',
         user_agent: 'Mozilla/5.0',
-        created_at: new Date()
+        created_at: new Date(),
       },
       {
         id: '423e4567-e89b-12d3-a456-426614174000',
@@ -53,7 +53,7 @@ describe('LogController', () => {
         details: { title: 'Updated Form' },
         ip_address: '192.168.1.2',
         user_agent: 'Mozilla/5.0',
-        created_at: new Date()
+        created_at: new Date(),
       },
       {
         id: '623e4567-e89b-12d3-a456-426614174000',
@@ -64,8 +64,8 @@ describe('LogController', () => {
         details: null,
         ip_address: '192.168.1.3',
         user_agent: null,
-        created_at: new Date()
-      }
+        created_at: new Date(),
+      },
     ];
 
     // Configurar el mock del servicio
@@ -82,7 +82,7 @@ describe('LogController', () => {
     expect(result).toBeDefined();
     expect(result).toEqual(expectedLogs);
     expect(result).toHaveLength(3);
-    
+
     // Verificar que los logs tienen la estructura correcta
     expect(result[0]).toHaveProperty('id');
     expect(result[0]).toHaveProperty('action');

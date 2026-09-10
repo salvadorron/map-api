@@ -18,7 +18,7 @@ export class ParrishService {
     const where: Record<string, any> = {};
 
     if (filters.municipalityIds && !filters.municipalityIds.includes('ALL')) {
-      const ids = filters.municipalityIds.split(',').map(id => id.trim());
+      const ids = filters.municipalityIds.split(',').map((id) => id.trim());
       where.municipality_id = { in: ids };
     }
 
@@ -27,8 +27,8 @@ export class ParrishService {
 
   async findOne(id: string) {
     const parrishId = UUID.fromString(id);
-    const parrish = await this._parrishModel.findOne({ 
-      where: { id: parrishId.getValue() } 
+    const parrish = await this._parrishModel.findOne({
+      where: { id: parrishId.getValue() },
     });
 
     if (!parrish) {

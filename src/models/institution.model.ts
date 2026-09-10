@@ -23,7 +23,11 @@ export class InstitutionModel extends BaseModel<Institution> {
     // Crear modelos relacionados internamente
     this.userModel = new Model<User>('users', this.pgService);
     this.categoryModel = new Model<Category>('categories', this.pgService);
-    this.institutionCategoryAssignmentModel = new Model<InstitutionCategoryAssignment>('institution_category_assignment', this.pgService);
+    this.institutionCategoryAssignmentModel =
+      new Model<InstitutionCategoryAssignment>(
+        'institution_category_assignment',
+        this.pgService,
+      );
 
     // Definir relaciones - se ejecuta automáticamente
     // Una institución tiene muchos usuarios
@@ -34,7 +38,7 @@ export class InstitutionModel extends BaseModel<Institution> {
       this.categoryModel,
       'institution_category_assignment',
       'institution_id',
-      'category_id'
+      'category_id',
     );
   }
 

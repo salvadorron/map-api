@@ -50,16 +50,16 @@ describe('FormService', () => {
         tag: 'test-tag',
         category_ids: [
           '123e4567-e89b-12d3-a456-426614174000',
-          '223e4567-e89b-12d3-a456-426614174000'
+          '223e4567-e89b-12d3-a456-426614174000',
         ],
         inputs: [
           {
             inputType: 'text',
             label: 'Test Input',
             placeholder: 'Enter text',
-            required: true
-          }
-        ]
+            required: true,
+          },
+        ],
       };
 
       const expectedForm = {
@@ -67,7 +67,7 @@ describe('FormService', () => {
         title: 'Test Form',
         tag: 'test-tag',
         created_at: new Date(),
-        updated_at: new Date()
+        updated_at: new Date(),
       };
 
       // Mock para la creación del form (dentro de runInTransaction)
@@ -91,7 +91,7 @@ describe('FormService', () => {
       const createFormDto = {
         title: 'Test Form',
         category_ids: ['123e4567-e89b-12d3-a456-426614174000'],
-        inputs: []
+        inputs: [],
       };
 
       const expectedForm = {
@@ -99,7 +99,7 @@ describe('FormService', () => {
         title: 'Test Form',
         tag: null,
         created_at: new Date(),
-        updated_at: new Date()
+        updated_at: new Date(),
       };
 
       mockClient.query
@@ -124,8 +124,8 @@ describe('FormService', () => {
           title: 'Form 1',
           tag: 'tag1',
           created_at: new Date(),
-          updated_at: new Date()
-        }
+          updated_at: new Date(),
+        },
       ];
 
       const version = {
@@ -133,14 +133,14 @@ describe('FormService', () => {
         form_id: '123e4567-e89b-12d3-a456-426614174000',
         version_number: 1,
         inputs: [],
-        is_active: true
+        is_active: true,
       };
 
       const categories = [
         {
           id: '523e4567-e89b-12d3-a456-426614174000',
-          name: 'Category 1'
-        }
+          name: 'Category 1',
+        },
       ];
 
       // Mock para findAll de forms
@@ -166,7 +166,8 @@ describe('FormService', () => {
     it('should find forms filtered by category_ids', async () => {
       // Arrange
       const filters = {
-        category_ids: '123e4567-e89b-12d3-a456-426614174000,223e4567-e89b-12d3-a456-426614174000'
+        category_ids:
+          '123e4567-e89b-12d3-a456-426614174000,223e4567-e89b-12d3-a456-426614174000',
       };
 
       const forms = [
@@ -174,15 +175,15 @@ describe('FormService', () => {
           id: '323e4567-e89b-12d3-a456-426614174000',
           title: 'Form 1',
           created_at: new Date(),
-          updated_at: new Date()
-        }
+          updated_at: new Date(),
+        },
       ];
 
       const activeVersion = {
         id: '423e4567-e89b-12d3-a456-426614174000',
         form_id: forms[0].id,
         version_number: 1,
-        is_active: true
+        is_active: true,
       };
 
       // El form filtrado por category_ids debería tener categorías relacionadas
@@ -195,8 +196,17 @@ describe('FormService', () => {
       // 5. SELECT versions (include con where)
       // 6. SELECT through table
       mockClient.query
-        .mockResolvedValueOnce({ rows: [{ id: '123e4567-e89b-12d3-a456-426614174000' }, { id: '223e4567-e89b-12d3-a456-426614174000' }], rowCount: 2 }) // SELECT id FROM categories (whereRelation)
-        .mockResolvedValueOnce({ rows: [{ form_id: forms[0].id }], rowCount: 1 }) // SELECT DISTINCT form_id FROM through_table (whereRelation)
+        .mockResolvedValueOnce({
+          rows: [
+            { id: '123e4567-e89b-12d3-a456-426614174000' },
+            { id: '223e4567-e89b-12d3-a456-426614174000' },
+          ],
+          rowCount: 2,
+        }) // SELECT id FROM categories (whereRelation)
+        .mockResolvedValueOnce({
+          rows: [{ form_id: forms[0].id }],
+          rowCount: 1,
+        }) // SELECT DISTINCT form_id FROM through_table (whereRelation)
         .mockResolvedValueOnce({ rows: forms, rowCount: 1 }) // SELECT forms WHERE id IN (...)
         // Para cada form, findByPk con includes genera:
         .mockResolvedValueOnce({ rows: [forms[0]], rowCount: 1 }) // SELECT form (findByPk)
@@ -224,7 +234,7 @@ describe('FormService', () => {
         form_id: '223e4567-e89b-12d3-a456-426614174000',
         version_number: 1,
         inputs: [],
-        is_active: true
+        is_active: true,
       };
 
       const form = {
@@ -232,21 +242,24 @@ describe('FormService', () => {
         title: 'Test Form',
         tag: 'test-tag',
         created_at: new Date(),
-        updated_at: new Date()
+        updated_at: new Date(),
       };
 
       const categories = [
         {
           id: '323e4567-e89b-12d3-a456-426614174000',
-          name: 'Category 1'
-        }
+          name: 'Category 1',
+        },
       ];
 
       // Mock: SELECT form_version + SELECT form + SELECT categories (through relation)
       mockClient.query
         .mockResolvedValueOnce({ rows: [version], rowCount: 1 }) // SELECT form_version
         .mockResolvedValueOnce({ rows: [form], rowCount: 1 }) // SELECT form (findByPk)
-        .mockResolvedValueOnce({ rows: [{ category_id: categories[0].id }], rowCount: 1 }) // SELECT through table
+        .mockResolvedValueOnce({
+          rows: [{ category_id: categories[0].id }],
+          rowCount: 1,
+        }) // SELECT through table
         .mockResolvedValueOnce({ rows: categories, rowCount: 1 }); // SELECT categories
 
       // Act
@@ -265,7 +278,7 @@ describe('FormService', () => {
 
       mockClient.query.mockResolvedValueOnce({
         rows: [],
-        rowCount: 0
+        rowCount: 0,
       });
 
       // Act & Assert
@@ -292,7 +305,7 @@ describe('FormService', () => {
         title: 'Test Form',
         tag: 'test-tag',
         created_at: new Date(),
-        updated_at: new Date()
+        updated_at: new Date(),
       };
 
       mockClient.query
@@ -318,9 +331,9 @@ describe('FormService', () => {
           {
             inputType: 'text',
             label: 'Updated Input',
-            required: true
-          }
-        ]
+            required: true,
+          },
+        ],
       };
 
       const currentForm = {
@@ -328,12 +341,12 @@ describe('FormService', () => {
         title: 'Test Form',
         tag: 'test-tag',
         created_at: new Date(),
-        updated_at: new Date()
+        updated_at: new Date(),
       };
 
       const updatedForm = {
         ...currentForm,
-        updated_at: new Date()
+        updated_at: new Date(),
       };
 
       const newVersion = {
@@ -341,7 +354,7 @@ describe('FormService', () => {
         form_id: formId,
         version_number: 2,
         inputs: updateFormDto.inputs,
-        is_active: true
+        is_active: true,
       };
 
       const existingVersion = {
@@ -349,7 +362,7 @@ describe('FormService', () => {
         form_id: formId,
         version_number: 1,
         inputs: [],
-        is_active: true
+        is_active: true,
       };
 
       mockClient.query
@@ -372,12 +385,12 @@ describe('FormService', () => {
       // Arrange
       const formId = '123e4567-e89b-12d3-a456-426614174000';
       const updateFormDto = {
-        title: 'Updated Title'
+        title: 'Updated Title',
       };
 
       mockClient.query.mockResolvedValueOnce({
         rows: [],
-        rowCount: 0
+        rowCount: 0,
       });
 
       // Act & Assert
@@ -396,12 +409,12 @@ describe('FormService', () => {
       // Arrange
       const formId = '123e4567-e89b-12d3-a456-426614174000';
       const deletedForm = {
-        id: formId
+        id: formId,
       };
 
       mockClient.query.mockResolvedValueOnce({
         rows: [deletedForm],
-        rowCount: 1
+        rowCount: 1,
       });
 
       // Act
@@ -410,7 +423,7 @@ describe('FormService', () => {
       // Assert
       expect(mockClient.query).toHaveBeenCalledTimes(1);
       expect(result).toEqual({
-        message: `Form with ID: (${formId}) has deleted successfully!`
+        message: `Form with ID: (${formId}) has deleted successfully!`,
       });
     });
 
@@ -419,12 +432,14 @@ describe('FormService', () => {
       const formId = '123e4567-e89b-12d3-a456-426614174000';
 
       mockClient.query.mockRejectedValueOnce(
-        new Error('Foreign key constraint violation')
+        new Error('Foreign key constraint violation'),
       );
 
       // Act & Assert
       await expect(service.remove(formId)).rejects.toThrow(NotFoundException);
-      await expect(service.remove(formId)).rejects.toThrow('This form is being used by a filled form.');
+      await expect(service.remove(formId)).rejects.toThrow(
+        'This form is being used by a filled form.',
+      );
     });
   });
 });

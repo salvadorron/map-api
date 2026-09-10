@@ -19,8 +19,8 @@ export class MunicipalityService {
 
   async findOne(id: string) {
     const municipalityId = UUID.fromString(id);
-    const municipality = await this._municipalityModel.findOne({ 
-      where: { id: municipalityId.getValue() } 
+    const municipality = await this._municipalityModel.findOne({
+      where: { id: municipalityId.getValue() },
     });
 
     if (!municipality) {
@@ -29,5 +29,4 @@ export class MunicipalityService {
 
     return municipality;
   }
-
 }

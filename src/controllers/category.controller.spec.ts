@@ -45,7 +45,7 @@ describe('CategoryController', () => {
       color: '#000000',
       element_type: 'text',
       icon: 'test-icon',
-      parent_id: '123e4567-e89b-12d3-a456-426614174000'
+      parent_id: '123e4567-e89b-12d3-a456-426614174000',
     };
 
     // Preparar la respuesta esperada del servicio
@@ -57,7 +57,7 @@ describe('CategoryController', () => {
       icon: 'test-icon',
       parent_id: '123e4567-e89b-12d3-a456-426614174000',
       created_at: new Date(),
-      updated_at: new Date()
+      updated_at: new Date(),
     };
 
     // Configurar el mock del servicio para que devuelva la categoría esperada
@@ -79,7 +79,7 @@ describe('CategoryController', () => {
     // Arrange: Preparar los filtros opcionales
     const filters = {
       is_public: 'false',
-      parent_ids: '123e4567-e89b-12d3-a456-426614174000'
+      parent_ids: '123e4567-e89b-12d3-a456-426614174000',
     };
 
     // Preparar la respuesta esperada del servicio
@@ -92,7 +92,7 @@ describe('CategoryController', () => {
         icon: 'icon-1',
         parent_id: null,
         created_at: new Date(),
-        updated_at: new Date()
+        updated_at: new Date(),
       },
       {
         id: '223e4567-e89b-12d3-a456-426614174000',
@@ -102,8 +102,8 @@ describe('CategoryController', () => {
         icon: 'icon-2',
         parent_id: '123e4567-e89b-12d3-a456-426614174000',
         created_at: new Date(),
-        updated_at: new Date()
-      }
+        updated_at: new Date(),
+      },
     ];
 
     // Configurar el mock del servicio
@@ -133,8 +133,8 @@ describe('CategoryController', () => {
         icon: 'icon-1',
         parent_id: null,
         created_at: new Date(),
-        updated_at: new Date()
-      }
+        updated_at: new Date(),
+      },
     ];
 
     // Configurar el mock del servicio
@@ -165,7 +165,7 @@ describe('CategoryController', () => {
       icon: 'test-icon',
       parent_id: null,
       created_at: new Date(),
-      updated_at: new Date()
+      updated_at: new Date(),
     };
 
     // Configurar el mock del servicio
@@ -189,7 +189,7 @@ describe('CategoryController', () => {
     const categoryId = '123e4567-e89b-12d3-a456-426614174000';
     const updateCategoryDto = {
       name: 'Updated Category Name',
-      color: '#FF0000'
+      color: '#FF0000',
     };
 
     // Preparar la respuesta esperada del servicio
@@ -201,7 +201,7 @@ describe('CategoryController', () => {
       icon: 'test-icon',
       parent_id: null,
       created_at: new Date(),
-      updated_at: new Date()
+      updated_at: new Date(),
     };
 
     // Configurar el mock del servicio
@@ -211,7 +211,10 @@ describe('CategoryController', () => {
     const result = await controller.update(categoryId, updateCategoryDto);
 
     // Assert: Verificar que el servicio fue llamado correctamente
-    expect(mockCategoryService.update).toHaveBeenCalledWith(categoryId, updateCategoryDto);
+    expect(mockCategoryService.update).toHaveBeenCalledWith(
+      categoryId,
+      updateCategoryDto,
+    );
     expect(mockCategoryService.update).toHaveBeenCalledTimes(1);
 
     // Verificar que el resultado es el esperado
@@ -228,7 +231,7 @@ describe('CategoryController', () => {
 
     // Preparar la respuesta esperada del servicio
     const expectedResponse = {
-      message: `Category with ID: (${categoryId}) has deleted successfully!`
+      message: `Category with ID: (${categoryId}) has deleted successfully!`,
     };
 
     // Configurar el mock del servicio
@@ -246,5 +249,4 @@ describe('CategoryController', () => {
     expect(result).toEqual(expectedResponse);
     expect(result.message).toContain(categoryId);
   });
-
 });

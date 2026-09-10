@@ -15,11 +15,18 @@ export class FilledFormModel extends BaseModel<FilledForm> {
 
   protected initializeRelations(): void {
     // Crear modelos relacionados internamente
-    this.formVersionModel = new Model<FormVersion>('form_versions', this.pgService);
+    this.formVersionModel = new Model<FormVersion>(
+      'form_versions',
+      this.pgService,
+    );
     this.formModel = new Model<Form>('forms', this.pgService);
 
     // Definir relaciones - se ejecuta automáticamente
-    this.model.belongsTo('formVersion', this.formVersionModel, 'form_version_id');
+    this.model.belongsTo(
+      'formVersion',
+      this.formVersionModel,
+      'form_version_id',
+    );
     this.formVersionModel.belongsTo('form', this.formModel, 'form_id');
     this.formModel.hasMany('versions', this.formVersionModel, 'form_id');
   }

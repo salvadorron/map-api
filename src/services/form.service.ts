@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PgService } from 'src/database/pg-config.service';
 import { CreateFormDto } from 'src/dto/create-form.dto';
 import { FormFilters } from 'src/dto/filters.dto';
@@ -24,7 +28,7 @@ export class FormService {
     const form = await this.formModel.create({
       id: formId.getValue(),
       title,
-      tag
+      tag,
     });
 
     const formVersionModel = this.formModel.getFormVersionModel();
@@ -35,14 +39,15 @@ export class FormService {
       inputs,
       title,
       tag,
-      is_active: true
+      is_active: true,
     });
 
-    const formCategoryAssignamentModel = this.formModel.getFormCategoryAssignamentModel();
+    const formCategoryAssignamentModel =
+      this.formModel.getFormCategoryAssignamentModel();
     for (const categoryId of category_ids) {
       await formCategoryAssignamentModel.create({
         form_id: formId.getValue(),
-        category_id: UUID.fromString(categoryId).getValue()
+        category_id: UUID.fromString(categoryId).getValue(),
       });
     }
 
@@ -56,8 +61,8 @@ export class FormService {
       const splittedCategories = filters.category_ids.split(',');
       options.whereRelation = {
         categories: {
-          id: { in: splittedCategories }
-        }
+          id: { in: splittedCategories },
+        },
       };
     }
 
@@ -70,24 +75,25 @@ export class FormService {
             relation: 'versions',
             where: { is_active: true },
             order: { version_number: 'DESC' },
-            limit: 1
+            limit: 1,
           },
           {
-            relation: 'categories'
-          }
+            relation: 'categories',
+          },
         ]);
 
-        const activeVersion = formWithVersion && (formWithVersion as any).versions
-          ? (formWithVersion as any).versions[0]
-          : null;
+        const activeVersion =
+          formWithVersion && (formWithVersion as any).versions
+            ? (formWithVersion as any).versions[0]
+            : null;
         const categories = (formWithVersion as any)?.categories || [];
 
         return {
           ...form,
           active_version: activeVersion || null,
-          categories
+          categories,
         };
-      })
+      }),
     );
 
     return formsWithVersions;
@@ -98,7 +104,7 @@ export class FormService {
 
     const formVersionModel = this.formModel.getFormVersionModel();
     const version = await formVersionModel.findOne({
-      where: { id: formVersionId.getValue() }
+      where: { id: formVersionId.getValue() },
     });
 
     if (!version) {
@@ -114,7 +120,7 @@ export class FormService {
     return {
       ...form,
       active_version: version,
-      categories: (form as any).categories || []
+      categories: (form as any).categories || [],
     };
   }
 
@@ -123,32 +129,45 @@ export class FormService {
     const { category_ids, inputs, title, tag, ...otherFields } = updateFormDto;
     const keys = Object.keys(otherFields);
 
-    if (keys.length === 0 && !category_ids && !inputs && title === undefined && tag === undefined) {
+    if (
+      keys.length === 0 &&
+      !category_ids &&
+      !inputs &&
+      title === undefined &&
+      tag === undefined
+    ) {
       throw new BadRequestException('Must be at least one property to patch');
     }
 
-    const currentForm = await this.formModel.findOne({ where: { id: formId.getValue() } });
+    const currentForm = await this.formModel.findOne({
+      where: { id: formId.getValue() },
+    });
     if (!currentForm) {
       throw new NotFoundException(`Form with ID ${id} not found.`);
     }
 
     const formVersionModel = this.formModel.getFormVersionModel();
-    const formCategoryAssignamentModel = this.formModel.getFormCategoryAssignamentModel();
+    const formCategoryAssignamentModel =
+      this.formModel.getFormCategoryAssignamentModel();
 
-    const needsNewVersion = inputs !== undefined || title !== undefined || tag !== undefined;
+    const needsNewVersion =
+      inputs !== undefined || title !== undefined || tag !== undefined;
 
     if (needsNewVersion) {
       const allVersions = await formVersionModel.findAll({
-        where: { form_id: formId.getValue() }
+        where: { form_id: formId.getValue() },
       });
 
-      const nextVersionNumber = allVersions.length > 0
-        ? Math.max(...allVersions.map(v => (v as any).version_number || 0)) + 1
-        : 1;
+      const nextVersionNumber =
+        allVersions.length > 0
+          ? Math.max(
+              ...allVersions.map((v) => (v as any).version_number || 0),
+            ) + 1
+          : 1;
 
       await formVersionModel.update(
         { is_active: false },
-        { where: { form_id: formId.getValue() } }
+        { where: { form_id: formId.getValue() } },
       );
 
       const newTitle = title !== undefined ? title : currentForm.title;
@@ -156,8 +175,8 @@ export class FormService {
       let inputsToUse = inputs !== undefined ? inputs : [];
 
       if (inputs === undefined && allVersions.length > 0) {
-        const sortedVersions = allVersions.sort((a, b) =>
-          (b as any).version_number - (a as any).version_number
+        const sortedVersions = allVersions.sort(
+          (a, b) => (b as any).version_number - (a as any).version_number,
         );
         inputsToUse = sortedVersions[0]?.inputs || [];
       }
@@ -170,7 +189,7 @@ export class FormService {
         inputs: inputsToUse,
         title: newTitle,
         tag: newTag,
-        is_active: true
+        is_active: true,
       });
 
       const formUpdateData: Partial<Form> = {};
@@ -182,25 +201,31 @@ export class FormService {
       }
 
       if (Object.keys(formUpdateData).length > 0) {
-        await this.formModel.update(formUpdateData, { where: { id: formId.getValue() } });
+        await this.formModel.update(formUpdateData, {
+          where: { id: formId.getValue() },
+        });
       }
     } else {
       if (keys.length > 0) {
         const updateData: Partial<Form> = {};
-        keys.forEach(key => {
+        keys.forEach((key) => {
           (updateData as any)[key] = otherFields[key];
         });
-        await this.formModel.update(updateData, { where: { id: formId.getValue() } });
+        await this.formModel.update(updateData, {
+          where: { id: formId.getValue() },
+        });
       }
     }
 
     if (category_ids !== undefined) {
-      await formCategoryAssignamentModel.delete({ where: { form_id: formId.getValue() } });
+      await formCategoryAssignamentModel.delete({
+        where: { form_id: formId.getValue() },
+      });
 
       for (const categoryId of category_ids) {
         await formCategoryAssignamentModel.create({
           form_id: formId.getValue(),
-          category_id: UUID.fromString(categoryId).getValue()
+          category_id: UUID.fromString(categoryId).getValue(),
         });
       }
     }
@@ -210,17 +235,18 @@ export class FormService {
         relation: 'versions',
         where: { is_active: true },
         order: { version_number: 'DESC' },
-        limit: 1
-      }
+        limit: 1,
+      },
     ]);
 
-    const activeVersion = updatedForm && (updatedForm as any).versions
-      ? (updatedForm as any).versions[0]
-      : null;
+    const activeVersion =
+      updatedForm && (updatedForm as any).versions
+        ? (updatedForm as any).versions[0]
+        : null;
 
     return {
       ...updatedForm,
-      active_version: activeVersion
+      active_version: activeVersion,
     };
   }
 
@@ -229,14 +255,16 @@ export class FormService {
 
     try {
       const form = await this.formModel.delete({
-        where: { id: formId.getValue() }
+        where: { id: formId.getValue() },
       });
 
       if (!form) {
         throw new NotFoundException(`Form with ID ${id} not found.`);
       }
 
-      return { message: `Form with ID: (${form.id}) has deleted successfully!` };
+      return {
+        message: `Form with ID: (${form.id}) has deleted successfully!`,
+      };
     } catch (error) {
       if (error instanceof NotFoundException) {
         throw error;
@@ -244,5 +272,4 @@ export class FormService {
       throw new NotFoundException(`This form is being used by a filled form.`);
     }
   }
-
 }

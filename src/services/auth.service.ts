@@ -54,12 +54,11 @@ export class AuthService {
     };
   }
 
-  async findUser(username: string){
+  async findUser(username: string) {
     const userByUsername = await this.usersService.findByUsername(username);
-    if(userByUsername) return userByUsername;
+    if (userByUsername) return userByUsername;
     const userByEmail = await this.usersService.findByEmail(username);
-    if(userByEmail) return userByEmail;
+    if (userByEmail) return userByEmail;
     return null;
   }
 }
-

@@ -15,5 +15,4 @@ export class ParrishController {
   findOne(@Param('id') id: string) {
     return this.parrishService.findOne(id);
   }
-
 }

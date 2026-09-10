@@ -56,7 +56,7 @@ describe('AuthService', () => {
       // Arrange
       const loginDto = {
         username: 'johndoe',
-        password: 'password123'
+        password: 'password123',
       };
 
       const user = {
@@ -66,7 +66,7 @@ describe('AuthService', () => {
         email: 'john.doe@example.com',
         password: 'hashedPassword',
         role: 'ADMIN_USER',
-        institution_id: '223e4567-e89b-12d3-a456-426614174000'
+        institution_id: '223e4567-e89b-12d3-a456-426614174000',
       };
 
       const accessToken = 'jwt-token-123';
@@ -81,13 +81,16 @@ describe('AuthService', () => {
       // Assert
       expect(mockUsersService.findByUsername).toHaveBeenCalledWith('johndoe');
       expect(mockUsersService.findByEmail).not.toHaveBeenCalled();
-      expect(mockUsersService.comparePassword).toHaveBeenCalledWith('password123', 'hashedPassword');
+      expect(mockUsersService.comparePassword).toHaveBeenCalledWith(
+        'password123',
+        'hashedPassword',
+      );
       expect(mockJwtService.sign).toHaveBeenCalledWith({
         sub: user.id,
         username: user.username,
         email: user.email,
         role: user.role,
-        institution_id: user.institution_id
+        institution_id: user.institution_id,
       });
       expect(result).toEqual({
         access_token: accessToken,
@@ -97,8 +100,8 @@ describe('AuthService', () => {
           username: user.username,
           email: user.email,
           role: user.role,
-          institution_id: user.institution_id
-        }
+          institution_id: user.institution_id,
+        },
       });
       expect(result.user).not.toHaveProperty('password');
     });
@@ -107,7 +110,7 @@ describe('AuthService', () => {
       // Arrange
       const loginDto = {
         username: 'john.doe@example.com',
-        password: 'password123'
+        password: 'password123',
       };
 
       const user = {
@@ -117,7 +120,7 @@ describe('AuthService', () => {
         email: 'john.doe@example.com',
         password: 'hashedPassword',
         role: 'ADMIN_USER',
-        institution_id: null
+        institution_id: null,
       };
 
       const accessToken = 'jwt-token-123';
@@ -131,8 +134,12 @@ describe('AuthService', () => {
       const result = await service.login(loginDto);
 
       // Assert
-      expect(mockUsersService.findByUsername).toHaveBeenCalledWith('john.doe@example.com');
-      expect(mockUsersService.findByEmail).toHaveBeenCalledWith('john.doe@example.com');
+      expect(mockUsersService.findByUsername).toHaveBeenCalledWith(
+        'john.doe@example.com',
+      );
+      expect(mockUsersService.findByEmail).toHaveBeenCalledWith(
+        'john.doe@example.com',
+      );
       expect(mockUsersService.comparePassword).toHaveBeenCalled();
       expect(result.access_token).toBe(accessToken);
     });
@@ -141,22 +148,26 @@ describe('AuthService', () => {
       // Arrange
       const loginDto = {
         username: 'nonexistent',
-        password: 'password123'
+        password: 'password123',
       };
 
       mockUsersService.findByUsername.mockResolvedValue(null);
       mockUsersService.findByEmail.mockResolvedValue(null);
 
       // Act & Assert
-      await expect(service.login(loginDto)).rejects.toThrow(UnauthorizedException);
-      await expect(service.login(loginDto)).rejects.toThrow('Credenciales inválidas');
+      await expect(service.login(loginDto)).rejects.toThrow(
+        UnauthorizedException,
+      );
+      await expect(service.login(loginDto)).rejects.toThrow(
+        'Credenciales inválidas',
+      );
     });
 
     it('should throw UnauthorizedException when password is invalid', async () => {
       // Arrange
       const loginDto = {
         username: 'johndoe',
-        password: 'wrongPassword'
+        password: 'wrongPassword',
       };
 
       const user = {
@@ -164,15 +175,19 @@ describe('AuthService', () => {
         username: 'johndoe',
         password: 'hashedPassword',
         email: 'john.doe@example.com',
-        role: 'ADMIN_USER'
+        role: 'ADMIN_USER',
       };
 
       mockUsersService.findByUsername.mockResolvedValue(user);
       mockUsersService.comparePassword.mockResolvedValue(false);
 
       // Act & Assert
-      await expect(service.login(loginDto)).rejects.toThrow(UnauthorizedException);
-      await expect(service.login(loginDto)).rejects.toThrow('Credenciales inválidas');
+      await expect(service.login(loginDto)).rejects.toThrow(
+        UnauthorizedException,
+      );
+      await expect(service.login(loginDto)).rejects.toThrow(
+        'Credenciales inválidas',
+      );
       expect(mockJwtService.sign).not.toHaveBeenCalled();
     });
   });
@@ -184,7 +199,7 @@ describe('AuthService', () => {
       const user = {
         id: '123e4567-e89b-12d3-a456-426614174000',
         username: 'johndoe',
-        email: 'john.doe@example.com'
+        email: 'john.doe@example.com',
       };
 
       mockUsersService.findByUsername.mockResolvedValue(user);
@@ -204,7 +219,7 @@ describe('AuthService', () => {
       const user = {
         id: '123e4567-e89b-12d3-a456-426614174000',
         username: 'johndoe',
-        email: 'john.doe@example.com'
+        email: 'john.doe@example.com',
       };
 
       mockUsersService.findByUsername.mockResolvedValue(null);

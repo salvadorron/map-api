@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { Model } from 'src/database/model.config';
 import { CreateUserDto } from '../dto/create-user.dto';
 import { UserFilters } from 'src/dto/filters.dto';
@@ -32,7 +36,9 @@ export class UsersService {
       username: createUserDto.username,
       password: hashedPassword,
       role: createUserDto.role,
-      institution_id: createUserDto.institution_id ? UUID.fromString(createUserDto.institution_id).getValue() : null
+      institution_id: createUserDto.institution_id
+        ? UUID.fromString(createUserDto.institution_id).getValue()
+        : null,
     });
     return this.excludePassword(user);
   }
@@ -48,14 +54,21 @@ export class UsersService {
       where.fullname = { ilike: `%${filters.searchTerm}%` };
     }
 
-    const result = await this._userModel.findAndCountAll({ where, include: ['institution'], limit, offset });
+    const result = await this._userModel.findAndCountAll({
+      where,
+      include: ['institution'],
+      limit,
+      offset,
+    });
 
     const total = result.count || 0;
     const totalPages = limit > 0 ? Math.ceil(total / limit) : 1;
     const hasNext = page < totalPages;
     const hasPrevious = page > 1;
 
-    const data = (result.rows || []).map((user: any) => this.excludePassword(user));
+    const data = (result.rows || []).map((user: any) =>
+      this.excludePassword(user),
+    );
 
     return {
       data,
@@ -64,16 +77,16 @@ export class UsersService {
         totalPages,
         hasNext,
         hasPrevious,
-        total
-      }
+        total,
+      },
     };
   }
 
   async findOne(id: string) {
     const userId = UUID.fromString(id);
-    const user = await this._userModel.findOne({ 
+    const user = await this._userModel.findOne({
       where: { id: userId.getValue() },
-      include: ['institution']
+      include: ['institution'],
     });
 
     if (!user) {
@@ -84,17 +97,17 @@ export class UsersService {
   }
 
   async findByUsername(username: string) {
-    const user = await this._userModel.findOne({ 
+    const user = await this._userModel.findOne({
       where: { username },
-      include: ['institution']
+      include: ['institution'],
     });
     return user || null;
   }
 
   async findByEmail(email: string) {
-    const user = await this._userModel.findOne({ 
+    const user = await this._userModel.findOne({
       where: { email },
-      include: ['institution']
+      include: ['institution'],
     });
     return user || null;
   }
@@ -125,15 +138,17 @@ export class UsersService {
     }
 
     if (updateUserDto.institution_id) {
-      updateData.institution_id = UUID.fromString(updateUserDto.institution_id).getValue() 
+      updateData.institution_id = UUID.fromString(
+        updateUserDto.institution_id,
+      ).getValue();
     }
 
     if (Object.keys(updateData).length === 0) {
       throw new BadRequestException('Must be at least one property to patch');
     }
 
-    const updatedUser = await this._userModel.update(updateData, { 
-      where: { id: userId.getValue() } 
+    const updatedUser = await this._userModel.update(updateData, {
+      where: { id: userId.getValue() },
     });
 
     if (!updatedUser) {
@@ -145,8 +160,8 @@ export class UsersService {
 
   async remove(id: string) {
     const userId = UUID.fromString(id);
-    const user = await this._userModel.delete({ 
-      where: { id: userId.getValue() } 
+    const user = await this._userModel.delete({
+      where: { id: userId.getValue() },
     });
 
     if (!user) {
@@ -160,7 +175,10 @@ export class UsersService {
     return await bcrypt.hash(password, 10);
   }
 
-  async comparePassword(text: string, hashedPassword: string): Promise<boolean> {
+  async comparePassword(
+    text: string,
+    hashedPassword: string,
+  ): Promise<boolean> {
     return await bcrypt.compare(text, hashedPassword);
   }
 }

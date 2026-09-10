@@ -54,7 +54,7 @@ describe('UsersService', () => {
         email: 'john.doe@example.com',
         password: 'password123',
         role: 'ADMIN_USER',
-        institution_id: '123e4567-e89b-12d3-a456-426614174000'
+        institution_id: '123e4567-e89b-12d3-a456-426614174000',
       };
 
       const hashedPassword = 'hashedPassword123';
@@ -67,13 +67,13 @@ describe('UsersService', () => {
         role: 'ADMIN_USER',
         institution_id: '123e4567-e89b-12d3-a456-426614174000',
         created_at: new Date(),
-        updated_at: new Date()
+        updated_at: new Date(),
       };
 
       (bcrypt.hash as jest.Mock).mockResolvedValue(hashedPassword);
       mockClient.query.mockResolvedValueOnce({
         rows: [userWithPassword],
-        rowCount: 1
+        rowCount: 1,
       });
 
       // Act
@@ -94,7 +94,7 @@ describe('UsersService', () => {
         username: 'janesmith',
         email: 'jane.smith@example.com',
         password: 'password456',
-        role: 'OPERATOR_USER'
+        role: 'OPERATOR_USER',
       };
 
       const hashedPassword = 'hashedPassword456';
@@ -107,13 +107,13 @@ describe('UsersService', () => {
         role: 'OPERATOR_USER',
         institution_id: null,
         created_at: new Date(),
-        updated_at: new Date()
+        updated_at: new Date(),
       };
 
       (bcrypt.hash as jest.Mock).mockResolvedValue(hashedPassword);
       mockClient.query.mockResolvedValueOnce({
         rows: [userWithPassword],
-        rowCount: 1
+        rowCount: 1,
       });
 
       // Act
@@ -137,13 +137,13 @@ describe('UsersService', () => {
           role: 'ADMIN_USER',
           institution_id: '223e4567-e89b-12d3-a456-426614174000',
           created_at: new Date(),
-          updated_at: new Date()
-        }
+          updated_at: new Date(),
+        },
       ];
 
       mockClient.query.mockResolvedValueOnce({
         rows: expectedUsers,
-        rowCount: 1
+        rowCount: 1,
       });
 
       // Act
@@ -168,12 +168,12 @@ describe('UsersService', () => {
         role: 'ADMIN_USER',
         institution_id: '223e4567-e89b-12d3-a456-426614174000',
         created_at: new Date(),
-        updated_at: new Date()
+        updated_at: new Date(),
       };
 
       mockClient.query.mockResolvedValueOnce({
         rows: [expectedUser],
-        rowCount: 1
+        rowCount: 1,
       });
 
       // Act
@@ -190,7 +190,7 @@ describe('UsersService', () => {
 
       mockClient.query.mockResolvedValueOnce({
         rows: [],
-        rowCount: 0
+        rowCount: 0,
       });
 
       // Act & Assert
@@ -213,12 +213,12 @@ describe('UsersService', () => {
         username: 'johndoe',
         password: 'hashedPassword',
         email: 'john.doe@example.com',
-        role: 'ADMIN_USER'
+        role: 'ADMIN_USER',
       };
 
       mockClient.query.mockResolvedValueOnce({
         rows: [expectedUser],
-        rowCount: 1
+        rowCount: 1,
       });
 
       // Act
@@ -235,7 +235,7 @@ describe('UsersService', () => {
 
       mockClient.query.mockResolvedValueOnce({
         rows: [],
-        rowCount: 0
+        rowCount: 0,
       });
 
       // Act
@@ -256,12 +256,12 @@ describe('UsersService', () => {
         username: 'johndoe',
         email: 'john.doe@example.com',
         password: 'hashedPassword',
-        role: 'ADMIN_USER'
+        role: 'ADMIN_USER',
       };
 
       mockClient.query.mockResolvedValueOnce({
         rows: [expectedUser],
-        rowCount: 1
+        rowCount: 1,
       });
 
       // Act
@@ -278,7 +278,7 @@ describe('UsersService', () => {
 
       mockClient.query.mockResolvedValueOnce({
         rows: [],
-        rowCount: 0
+        rowCount: 0,
       });
 
       // Act
@@ -295,7 +295,7 @@ describe('UsersService', () => {
       const userId = '123e4567-e89b-12d3-a456-426614174000';
       const updateUserDto = {
         fullname: 'John Updated Doe',
-        email: 'john.updated@example.com'
+        email: 'john.updated@example.com',
       };
 
       const updatedUser = {
@@ -306,11 +306,13 @@ describe('UsersService', () => {
         role: 'ADMIN_USER',
         institution_id: null,
         created_at: new Date(),
-        updated_at: new Date()
+        updated_at: new Date(),
       };
 
-      mockClient.query
-        .mockResolvedValueOnce({ rows: [updatedUser], rowCount: 1 }); // UPDATE user
+      mockClient.query.mockResolvedValueOnce({
+        rows: [updatedUser],
+        rowCount: 1,
+      }); // UPDATE user
 
       // Act
       const result = await service.update(userId, updateUserDto);
@@ -327,7 +329,7 @@ describe('UsersService', () => {
       // Arrange
       const userId = '123e4567-e89b-12d3-a456-426614174000';
       const updateUserDto = {
-        password: 'newPassword123'
+        password: 'newPassword123',
       };
 
       const currentUser = {
@@ -336,7 +338,7 @@ describe('UsersService', () => {
         email: 'john.doe@example.com',
         username: 'johndoe',
         password: 'oldHashedPassword',
-        role: 'ADMIN_USER'
+        role: 'ADMIN_USER',
       };
 
       const hashedPassword = 'newHashedPassword';
@@ -347,12 +349,14 @@ describe('UsersService', () => {
         username: 'johndoe',
         role: 'ADMIN_USER',
         created_at: new Date(),
-        updated_at: new Date()
+        updated_at: new Date(),
       };
 
       (bcrypt.hash as jest.Mock).mockResolvedValue(hashedPassword);
-      mockClient.query
-        .mockResolvedValueOnce({ rows: [updatedUser], rowCount: 1 }); // UPDATE user
+      mockClient.query.mockResolvedValueOnce({
+        rows: [updatedUser],
+        rowCount: 1,
+      }); // UPDATE user
 
       // Act
       const result = await service.update(userId, updateUserDto);
@@ -367,12 +371,12 @@ describe('UsersService', () => {
       // Arrange
       const userId = '123e4567-e89b-12d3-a456-426614174000';
       const updateUserDto = {
-        fullname: 'Updated Name'
+        fullname: 'Updated Name',
       };
 
       mockClient.query.mockResolvedValueOnce({
         rows: [],
-        rowCount: 0
+        rowCount: 0,
       });
 
       // Act & Assert
@@ -398,12 +402,12 @@ describe('UsersService', () => {
         role: 'ADMIN_USER',
         institution_id: null,
         created_at: new Date(),
-        updated_at: new Date()
+        updated_at: new Date(),
       };
 
       mockClient.query.mockResolvedValueOnce({
         rows: [deletedUser],
-        rowCount: 1
+        rowCount: 1,
       });
 
       // Act
@@ -420,7 +424,7 @@ describe('UsersService', () => {
 
       mockClient.query.mockResolvedValueOnce({
         rows: [],
-        rowCount: 0
+        rowCount: 0,
       });
 
       // Act & Assert

@@ -1,4 +1,14 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, Res } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  Query,
+  Res,
+} from '@nestjs/common';
 import { BadRequestException } from '@nestjs/common';
 import type { Response } from 'express';
 import { CreateFilledFormDto } from 'src/dto/create-filled_form.dto';
@@ -29,7 +39,11 @@ export class FilledFormController {
    * Response: JSON array de objetos { id, title?, shape_id, snippet? }
    */
   @Get('search')
-  async search(@Query('q') q: string, @Query('page') page?: string, @Query('limit') limit?: string) {
+  async search(
+    @Query('q') q: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
     if (!q || typeof q !== 'string' || q.trim() === '') {
       throw new BadRequestException('Query parameter q is required');
     }
@@ -44,18 +58,18 @@ export class FilledFormController {
   async generatePDFReport(@Res() res: Response) {
     try {
       const pdfBuffer = await this.filledFormService.generatePDFReport();
-      
+
       res.set({
         'Content-Type': 'application/pdf',
         'Content-Disposition': `attachment; filename="reporte-formularios-${new Date().toISOString().split('T')[0]}.pdf"`,
         'Content-Length': pdfBuffer.length.toString(),
       });
-      
+
       res.send(pdfBuffer);
     } catch (error) {
-      res.status(500).json({ 
+      res.status(500).json({
         message: 'Error al generar el reporte PDF',
-        error: error.message 
+        error: error.message,
       });
     }
   }
@@ -66,7 +80,10 @@ export class FilledFormController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateFilledFormDto: UpdateFilledFormDto) {
+  update(
+    @Param('id') id: string,
+    @Body() updateFilledFormDto: UpdateFilledFormDto,
+  ) {
     return this.filledFormService.update(id, updateFilledFormDto);
   }
 

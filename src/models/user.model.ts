@@ -13,11 +13,19 @@ export class UserModel extends BaseModel<User> {
 
   protected initializeRelations(): void {
     // Crear modelos relacionados internamente
-    this.institutionModel = new Model<Institution>('institutions', this.pgService);
+    this.institutionModel = new Model<Institution>(
+      'institutions',
+      this.pgService,
+    );
 
     // Definir relaciones - se ejecuta automáticamente
     // Un usuario pertenece a una institución
-    this.model.belongsTo('institution', this.institutionModel, 'institution_id', 'id');
+    this.model.belongsTo(
+      'institution',
+      this.institutionModel,
+      'institution_id',
+      'id',
+    );
   }
 
   // Exponer modelos relacionados si se necesitan en el servicio

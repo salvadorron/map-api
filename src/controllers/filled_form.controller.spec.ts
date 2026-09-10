@@ -49,10 +49,10 @@ describe('FilledFormController', () => {
       form_id: '123e4567-e89b-12d3-a456-426614174000',
       shape_id: '223e4567-e89b-12d3-a456-426614174000',
       records: new Map([
-        ['field1', { value: 'test value', label: 'Test Field', type: 'text' }]
+        ['field1', { value: 'test value', label: 'Test Field', type: 'text' }],
       ]),
       title: 'Test Filled Form',
-      user_id: '323e4567-e89b-12d3-a456-426614174000'
+      user_id: '323e4567-e89b-12d3-a456-426614174000',
     };
 
     // Preparar la respuesta esperada del servicio
@@ -61,11 +61,13 @@ describe('FilledFormController', () => {
       form_id: '123e4567-e89b-12d3-a456-426614174000',
       form_version_id: '523e4567-e89b-12d3-a456-426614174000',
       shape_id: '223e4567-e89b-12d3-a456-426614174000',
-      records: { field1: { value: 'test value', label: 'Test Field', type: 'text' } },
+      records: {
+        field1: { value: 'test value', label: 'Test Field', type: 'text' },
+      },
       title: 'Test Filled Form',
       user_id: '323e4567-e89b-12d3-a456-426614174000',
       created_at: new Date(),
-      updated_at: new Date()
+      updated_at: new Date(),
     };
 
     // Configurar el mock del servicio
@@ -75,7 +77,9 @@ describe('FilledFormController', () => {
     const result = await controller.create(createFilledFormDto);
 
     // Assert: Verificar que el servicio fue llamado correctamente
-    expect(mockFilledFormService.create).toHaveBeenCalledWith(createFilledFormDto);
+    expect(mockFilledFormService.create).toHaveBeenCalledWith(
+      createFilledFormDto,
+    );
     expect(mockFilledFormService.create).toHaveBeenCalledTimes(1);
 
     // Verificar que el resultado es el esperado
@@ -86,7 +90,7 @@ describe('FilledFormController', () => {
   it('should find all filled forms', async () => {
     // Arrange: Preparar los filtros opcionales
     const filters = {
-      shape_id: '223e4567-e89b-12d3-a456-426614174000'
+      shape_id: '223e4567-e89b-12d3-a456-426614174000',
     };
 
     // Preparar la respuesta esperada del servicio
@@ -100,7 +104,7 @@ describe('FilledFormController', () => {
         title: 'Test Filled Form 1',
         user_id: '323e4567-e89b-12d3-a456-426614174000',
         created_at: new Date(),
-        updated_at: new Date()
+        updated_at: new Date(),
       },
       {
         id: '623e4567-e89b-12d3-a456-426614174000',
@@ -111,8 +115,8 @@ describe('FilledFormController', () => {
         title: 'Test Filled Form 2',
         user_id: null,
         created_at: new Date(),
-        updated_at: new Date()
-      }
+        updated_at: new Date(),
+      },
     ];
 
     // Configurar el mock del servicio
@@ -143,8 +147,8 @@ describe('FilledFormController', () => {
         title: 'Test Filled Form',
         user_id: null,
         created_at: new Date(),
-        updated_at: new Date()
-      }
+        updated_at: new Date(),
+      },
     ];
 
     // Configurar el mock del servicio
@@ -171,11 +175,13 @@ describe('FilledFormController', () => {
       id: filledFormId,
       form_version_id: '523e4567-e89b-12d3-a456-426614174000',
       shape_id: '223e4567-e89b-12d3-a456-426614174000',
-      records: { field1: { value: 'test value', label: 'Test Field', type: 'text' } },
+      records: {
+        field1: { value: 'test value', label: 'Test Field', type: 'text' },
+      },
       title: 'Test Filled Form',
       user_id: '323e4567-e89b-12d3-a456-426614174000',
       created_at: new Date(),
-      updated_at: new Date()
+      updated_at: new Date(),
     };
 
     // Configurar el mock del servicio
@@ -200,8 +206,11 @@ describe('FilledFormController', () => {
     const updateFilledFormDto = {
       title: 'Updated Filled Form Title',
       records: new Map([
-        ['field1', { value: 'updated value', label: 'Updated Field', type: 'text' }]
-      ])
+        [
+          'field1',
+          { value: 'updated value', label: 'Updated Field', type: 'text' },
+        ],
+      ]),
     };
 
     // Preparar la respuesta esperada del servicio
@@ -209,11 +218,17 @@ describe('FilledFormController', () => {
       id: filledFormId,
       form_version_id: '523e4567-e89b-12d3-a456-426614174000',
       shape_id: '223e4567-e89b-12d3-a456-426614174000',
-      records: { field1: { value: 'updated value', label: 'Updated Field', type: 'text' } },
+      records: {
+        field1: {
+          value: 'updated value',
+          label: 'Updated Field',
+          type: 'text',
+        },
+      },
       title: 'Updated Filled Form Title',
       user_id: '323e4567-e89b-12d3-a456-426614174000',
       created_at: new Date(),
-      updated_at: new Date()
+      updated_at: new Date(),
     };
 
     // Configurar el mock del servicio
@@ -223,7 +238,10 @@ describe('FilledFormController', () => {
     const result = await controller.update(filledFormId, updateFilledFormDto);
 
     // Assert: Verificar que el servicio fue llamado correctamente
-    expect(mockFilledFormService.update).toHaveBeenCalledWith(filledFormId, updateFilledFormDto);
+    expect(mockFilledFormService.update).toHaveBeenCalledWith(
+      filledFormId,
+      updateFilledFormDto,
+    );
     expect(mockFilledFormService.update).toHaveBeenCalledTimes(1);
 
     // Verificar que el resultado es el esperado
@@ -247,18 +265,24 @@ describe('FilledFormController', () => {
       title: 'Test Filled Form',
       user_id: '323e4567-e89b-12d3-a456-426614174000',
       created_at: new Date(),
-      updated_at: new Date()
+      updated_at: new Date(),
     };
 
     // Configurar el mock del servicio
-    mockFilledFormService.updateToLatestVersion.mockResolvedValue(expectedFilledForm);
+    mockFilledFormService.updateToLatestVersion.mockResolvedValue(
+      expectedFilledForm,
+    );
 
     // Act: Ejecutar el método del controlador
     const result = await controller.updateToLatestVersion(filledFormId);
 
     // Assert: Verificar que el servicio fue llamado correctamente
-    expect(mockFilledFormService.updateToLatestVersion).toHaveBeenCalledWith(filledFormId);
-    expect(mockFilledFormService.updateToLatestVersion).toHaveBeenCalledTimes(1);
+    expect(mockFilledFormService.updateToLatestVersion).toHaveBeenCalledWith(
+      filledFormId,
+    );
+    expect(mockFilledFormService.updateToLatestVersion).toHaveBeenCalledTimes(
+      1,
+    );
 
     // Verificar que el resultado es el esperado
     expect(result).toBeDefined();
@@ -272,7 +296,7 @@ describe('FilledFormController', () => {
 
     // Preparar la respuesta esperada del servicio
     const expectedResponse = {
-      message: `Filled form with ID: (${filledFormId}) has deleted successfully!`
+      message: `Filled form with ID: (${filledFormId}) has deleted successfully!`,
     };
 
     // Configurar el mock del servicio
@@ -315,7 +339,9 @@ describe('FilledFormController', () => {
     // Verificar que se configuraron los headers correctamente
     expect(mockResponse.set).toHaveBeenCalledWith({
       'Content-Type': 'application/pdf',
-      'Content-Disposition': expect.stringContaining('attachment; filename="reporte-formularios-'),
+      'Content-Disposition': expect.stringContaining(
+        'attachment; filename="reporte-formularios-',
+      ),
       'Content-Length': pdfBuffer.length.toString(),
     });
 
@@ -327,7 +353,7 @@ describe('FilledFormController', () => {
   it('should handle error when generating PDF report', async () => {
     // Arrange: Preparar el error
     const error = new Error('Error generating PDF');
-    
+
     // Mock del objeto Response de Express
     const mockResponse = {
       set: jest.fn().mockReturnThis(),
@@ -349,7 +375,7 @@ describe('FilledFormController', () => {
     expect(mockResponse.status).toHaveBeenCalledWith(500);
     expect(mockResponse.json).toHaveBeenCalledWith({
       message: 'Error al generar el reporte PDF',
-      error: error.message
+      error: error.message,
     });
   });
 });

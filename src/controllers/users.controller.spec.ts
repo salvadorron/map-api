@@ -46,7 +46,7 @@ describe('UsersController', () => {
       email: 'john.doe@example.com',
       password: 'password123',
       role: 'ADMIN_USER',
-      institution_id: '123e4567-e89b-12d3-a456-426614174000'
+      institution_id: '123e4567-e89b-12d3-a456-426614174000',
     };
 
     // Preparar la respuesta esperada del servicio (sin password)
@@ -58,7 +58,7 @@ describe('UsersController', () => {
       role: 'ADMIN_USER',
       institution_id: '123e4567-e89b-12d3-a456-426614174000',
       created_at: new Date(),
-      updated_at: new Date()
+      updated_at: new Date(),
     };
 
     // Configurar el mock del servicio
@@ -89,7 +89,7 @@ describe('UsersController', () => {
       username: 'janesmith',
       email: 'jane.smith@example.com',
       password: 'password456',
-      role: 'OPERATOR_USER'
+      role: 'OPERATOR_USER',
     };
 
     // Preparar la respuesta esperada del servicio
@@ -101,7 +101,7 @@ describe('UsersController', () => {
       role: 'OPERATOR_USER',
       institution_id: null,
       created_at: new Date(),
-      updated_at: new Date()
+      updated_at: new Date(),
     };
 
     // Configurar el mock del servicio
@@ -131,7 +131,7 @@ describe('UsersController', () => {
         role: 'ADMIN_USER',
         institution_id: '223e4567-e89b-12d3-a456-426614174000',
         created_at: new Date(),
-        updated_at: new Date()
+        updated_at: new Date(),
       },
       {
         id: '323e4567-e89b-12d3-a456-426614174000',
@@ -141,7 +141,7 @@ describe('UsersController', () => {
         role: 'OPERATOR_USER',
         institution_id: null,
         created_at: new Date(),
-        updated_at: new Date()
+        updated_at: new Date(),
       },
       {
         id: '423e4567-e89b-12d3-a456-426614174000',
@@ -151,8 +151,8 @@ describe('UsersController', () => {
         role: 'SUPER_ADMIN',
         institution_id: null,
         created_at: new Date(),
-        updated_at: new Date()
-      }
+        updated_at: new Date(),
+      },
     ];
 
     // Configurar el mock del servicio
@@ -169,7 +169,7 @@ describe('UsersController', () => {
     expect(result).toBeDefined();
     expect(result).toEqual(expectedUsers);
     expect(result).toHaveLength(3);
-    
+
     // Verificar que los usuarios tienen la estructura correcta y no incluyen password
     expect(result[0]).toHaveProperty('id');
     expect(result[0]).toHaveProperty('fullname');
@@ -212,7 +212,7 @@ describe('UsersController', () => {
       role: 'ADMIN_USER',
       institution_id: '223e4567-e89b-12d3-a456-426614174000',
       created_at: new Date(),
-      updated_at: new Date()
+      updated_at: new Date(),
     };
 
     // Configurar el mock del servicio
@@ -243,7 +243,7 @@ describe('UsersController', () => {
     const updateUserDto = {
       fullname: 'John Updated Doe',
       email: 'john.updated@example.com',
-      role: 'SUPER_ADMIN'
+      role: 'SUPER_ADMIN',
     };
 
     // Preparar la respuesta esperada del servicio
@@ -255,7 +255,7 @@ describe('UsersController', () => {
       role: 'SUPER_ADMIN',
       institution_id: '223e4567-e89b-12d3-a456-426614174000',
       created_at: new Date(),
-      updated_at: new Date()
+      updated_at: new Date(),
     };
 
     // Configurar el mock del servicio
@@ -283,7 +283,7 @@ describe('UsersController', () => {
     // Arrange: Preparar el ID y solo algunos datos de actualización
     const userId = '123e4567-e89b-12d3-a456-426614174000';
     const updateUserDto = {
-      fullname: 'John Updated Doe'
+      fullname: 'John Updated Doe',
     };
 
     // Preparar la respuesta esperada del servicio
@@ -295,7 +295,7 @@ describe('UsersController', () => {
       role: 'ADMIN_USER',
       institution_id: '223e4567-e89b-12d3-a456-426614174000',
       created_at: new Date(),
-      updated_at: new Date()
+      updated_at: new Date(),
     };
 
     // Configurar el mock del servicio
@@ -328,7 +328,7 @@ describe('UsersController', () => {
       role: 'ADMIN_USER',
       institution_id: '223e4567-e89b-12d3-a456-426614174000',
       created_at: new Date(),
-      updated_at: new Date()
+      updated_at: new Date(),
     };
 
     // Configurar el mock del servicio

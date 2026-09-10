@@ -51,12 +51,12 @@ describe('LogService', () => {
         user_id: '223e4567-e89b-12d3-a456-426614174000',
         details: { name: 'Test Category' },
         ip_address: '192.168.1.1',
-        user_agent: 'Mozilla/5.0'
+        user_agent: 'Mozilla/5.0',
       };
 
       mockClient.query.mockResolvedValueOnce({
         rows: [],
-        rowCount: 1
+        rowCount: 1,
       });
 
       // Act
@@ -76,12 +76,12 @@ describe('LogService', () => {
         user_id: null,
         details: null,
         ip_address: null,
-        user_agent: null
+        user_agent: null,
       };
 
       mockClient.query.mockResolvedValueOnce({
         rows: [],
-        rowCount: 1
+        rowCount: 1,
       });
 
       // Act
@@ -105,7 +105,7 @@ describe('LogService', () => {
           details: { name: 'Test Category' },
           ip_address: '192.168.1.1',
           user_agent: 'Mozilla/5.0',
-          created_at: new Date()
+          created_at: new Date(),
         },
         {
           id: '423e4567-e89b-12d3-a456-426614174000',
@@ -116,13 +116,13 @@ describe('LogService', () => {
           details: { title: 'Updated Form' },
           ip_address: '192.168.1.2',
           user_agent: 'Mozilla/5.0',
-          created_at: new Date()
-        }
+          created_at: new Date(),
+        },
       ];
 
       mockClient.query.mockResolvedValueOnce({
         rows: expectedLogs,
-        rowCount: 2
+        rowCount: 2,
       });
 
       // Act
@@ -139,7 +139,7 @@ describe('LogService', () => {
       // Arrange
       mockClient.query.mockResolvedValueOnce({
         rows: [],
-        rowCount: 0
+        rowCount: 0,
       });
 
       // Act
